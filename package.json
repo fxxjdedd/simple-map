@@ -1,0 +1,29 @@
+{
+  "name": "simple-map",
+  "version": "1.0.0",
+  "description": "just a simple map",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/fxxjdedd/simple-map.git"
+  },
+  "keywords": [
+    "map"
+  ],
+  "author": "",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/fxxjdedd/simple-map/issues"
+  },
+  "homepage": "https://github.com/fxxjdedd/simple-map#readme",
+  "devDependencies": {
+    "prettier": "^2.8.1",
+    "typescript": "^4.9.4"
+  },
+  "dependencies": {
+    "gl-matrix": "^3.4.3"
+  }
+}
