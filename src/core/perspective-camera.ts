@@ -27,6 +27,7 @@ export class PerspectiveCamera {
 
     zoom: number;
     cameraAltitude: number = 0;
+    fov: number = (60 * Math.PI) / 180;
 
     tranform: PerspectiveCameraTransform;
 
@@ -76,12 +77,15 @@ export class PerspectiveCamera {
     updateZoom(zoom: number) {
         const resolution = this.projection.getResolution(zoom);
         const viewHeightMeters = this.viewSize[1] * resolution;
-        const fov = 60;
-        const altitude = viewHeightMeters / Math.tan((fov * Math.PI) / 180);
+
+        // 这里viewHeightMeters值得是地图平面本身，就是处于视锥之间那个大地平面，而不是near;
+        // 大地平面就位于z=0的平面上，所以相机与其的距离就是altitude
+        const altitude = viewHeightMeters / (2 * Math.tan(this.fov));
 
         this.cameraAltitude = altitude;
         this.near = altitude / 10;
         this.far = altitude * 50;
+        this.fov = Math.atan(viewHeightMeters / (2 * this.near));
 
         return zoom;
     }
@@ -117,5 +121,30 @@ export class PerspectiveCamera {
             0, 0, -1, 0,
         );
         return mat4.mul(mat4.create(), viewMatrix, projMatrix);
+    }
+
+    getBounds() {
+        const nearPlaneLB = vec3.fromValues(-1, -1, this.near);
+        const nearPlaneRT = vec3.fromValues(1, 1, this.near);
+
+        const farPlaneLB = vec3.fromValues(-1, -1, this.far);
+        const farPlaneRT = vec3.fromValues(1, 1, this.far);
+
+        const backToWorldMatrix = mat4.invert(mat4.create(), this.getVPMatrix());
+
+        vec3.transformMat4(nearPlaneLB, nearPlaneLB, backToWorldMatrix);
+        vec3.transformMat4(nearPlaneRT, nearPlaneRT, backToWorldMatrix);
+        vec3.transformMat4(farPlaneLB, farPlaneLB, backToWorldMatrix);
+        vec3.transformMat4(farPlaneRT, farPlaneRT, backToWorldMatrix);
+
+        const minX = Math.min(nearPlaneLB[0], nearPlaneRT[0], farPlaneLB[0], farPlaneRT[0]);
+        const minY = Math.min(nearPlaneLB[1], nearPlaneRT[1], farPlaneLB[1], farPlaneRT[1]);
+        const maxX = Math.max(nearPlaneLB[0], nearPlaneRT[0], farPlaneLB[0], farPlaneRT[0]);
+        const maxY = Math.max(nearPlaneLB[1], nearPlaneRT[1], farPlaneLB[1], farPlaneRT[1]);
+
+        const minLnglat = this.projection.unproject(vec2.fromValues(minX, minY));
+        const maxLnglat = this.projection.unproject(vec2.fromValues(maxX, maxY));
+
+        return [...minLnglat, maxLnglat];
     }
 }
