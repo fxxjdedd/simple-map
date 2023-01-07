@@ -1,10 +1,12 @@
 import { vec2, vec4 } from "gl-matrix";
 import { RasterTileLayer } from "../core/layer";
+import { FrameState } from "../core/map";
 import { RasterTile, TileNum } from "../core/tile";
 import { Circumference, R } from "../projection/Constants";
 import { WebMercatorProjection } from "../projection/WebMercatorProjection";
+import { renderTexture2D } from "../render/renderTexture2D";
 
-export class MapBox3857RasterTileLayer extends RasterTileLayer {
+export class EPSG3857RasterTileLayer extends RasterTileLayer {
     projection = new WebMercatorProjection();
 
     getTileNums(bounds: vec4, zoom: number): TileNum[] {
@@ -31,7 +33,9 @@ export class MapBox3857RasterTileLayer extends RasterTileLayer {
         }
         return tileNums;
     }
-    renderTile(tile: RasterTile) {
-        throw new Error("Method not implemented.");
+    renderTile(frameState: FrameState, tile: RasterTile) {
+        const { gl } = frameState;
+        console.log("renderTile", tile);
+        renderTexture2D(gl, tile.tileData!);
     }
 }

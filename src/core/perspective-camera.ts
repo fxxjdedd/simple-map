@@ -34,14 +34,14 @@ export class PerspectiveCamera {
     projection: WebMercatorProjection;
 
     constructor(init: PerspectiveCameraInit) {
+        this.projection = init.projection;
+
         this.near = 0.01;
         this.far = CAMERA_FIXED_ALTITUDE;
         this.viewSize = init.viewSize;
         this.zoom = this.updateZoom(init.zoom);
 
         this.tranform = this.updateTransform(init.target, init.rotation, init.pitch);
-
-        this.projection = init.projection;
     }
 
     updateTransform(target: vec2, rotation: number, pitch: number): PerspectiveCameraTransform {

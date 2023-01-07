@@ -39,12 +39,12 @@ export abstract class RasterTileLayer extends Layer {
 
         for await (const tile of asyncIterator) {
             if (tile !== null) {
-                this.renderTile(tile);
+                this.renderTile(frameState, tile);
             }
         }
     }
 
     abstract getTileNums(bounds: vec4, zoom: number): TileNum[];
 
-    abstract renderTile(tile: RasterTile): any;
+    abstract renderTile(frameState: FrameState, tile: RasterTile): any;
 }

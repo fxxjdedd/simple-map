@@ -2,10 +2,12 @@ import { vec2, vec3 } from "gl-matrix";
 import { PerspectiveCamera } from "./perspective-camera";
 import { WebMercatorProjection } from "../projection/WebMercatorProjection";
 import { Layer } from "./layer";
+import { GLContext } from "../gl/GLContext";
 
 export interface FrameState {
     camera: PerspectiveCamera;
     zoom: number;
+    gl: GLContext;
 }
 
 export interface SimpleMapInit {
@@ -32,7 +34,9 @@ export class SimpleMap {
 
     private layers: Set<Layer> = new Set();
 
-    constructor(init?: Partial<SimpleMapInit>) {
+    private gl: GLContext;
+
+    constructor(container: string, init?: Partial<SimpleMapInit>) {
         const {
             center = [116.4, 39.9],
             zoom = 1,
@@ -56,6 +60,10 @@ export class SimpleMap {
             target: this.centerCoord,
             projection: this.projection,
         });
+
+        this.gl = new GLContext(container);
+
+        this.requestRender();
     }
 
     setCenter(center: vec2) {
@@ -91,6 +99,7 @@ export class SimpleMap {
         const frameState: FrameState = {
             camera: this.camera,
             zoom: this.zoom,
+            gl: this.gl,
         };
 
         this.requestRenderLoop(() => {
@@ -99,6 +108,7 @@ export class SimpleMap {
     }
 
     private renderFrame(frameState: FrameState) {
+        console.log("renderFrame");
         for (const layer of this.layers) {
             layer.render(frameState);
         }
@@ -114,7 +124,7 @@ export class SimpleMap {
         const startRenderLoop = () => {
             this.runningRenderLoopID = requestAnimationFrame(() => {
                 fn.call(null);
-                if (this.restFrameCount-- > 0) {
+                if (--this.restFrameCount > 0) {
                     startRenderLoop();
                 } else {
                     this.restFrameCount = 0;

@@ -80,6 +80,7 @@ export class RasterSource extends Source<RasterTile> {
     }
 
     async load(tileNum: TileNum): Promise<Uint8Array> {
+        console.log(`load tileNum: ${tileNum.z}/${tileNum.x}/${tileNum.y}`);
         const url = replaceURLWithTileNum(this.url, tileNum);
         const buffer = await (await fetch(url)).arrayBuffer();
         return new Uint8Array(buffer);
