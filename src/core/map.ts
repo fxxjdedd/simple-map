@@ -1,9 +1,11 @@
 import { vec2, vec3 } from "gl-matrix";
 import { PerspectiveCamera } from "./perspective-camera";
 import { WebMercatorProjection } from "../projection/WebMercatorProjection";
+import { Layer } from "./layer";
 
 export interface FrameState {
     camera: PerspectiveCamera;
+    zoom: number;
 }
 
 export interface SimpleMapInit {
@@ -27,6 +29,8 @@ export class SimpleMap {
     private projection: WebMercatorProjection;
 
     private camera: PerspectiveCamera;
+
+    private layers: Set<Layer> = new Set();
 
     constructor(init?: Partial<SimpleMapInit>) {
         const {
@@ -78,9 +82,15 @@ export class SimpleMap {
         this.requestRender();
     }
 
+    addLayer(layer: Layer) {
+        this.layers.add(layer);
+        this.requestRender();
+    }
+
     requestRender() {
         const frameState: FrameState = {
             camera: this.camera,
+            zoom: this.zoom,
         };
 
         this.requestRenderLoop(() => {
@@ -88,7 +98,11 @@ export class SimpleMap {
         }, 5);
     }
 
-    private renderFrame(frameState: FrameState) {}
+    private renderFrame(frameState: FrameState) {
+        for (const layer of this.layers) {
+            layer.render(frameState);
+        }
+    }
 
     private requestRenderLoop(fn: Function, frameCount: number) {
         if (this.runningRenderLoopID > 0) {

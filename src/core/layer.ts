@@ -1,5 +1,7 @@
-import { Source } from "./source";
-import { RasterTile } from "./tile";
+import { vec4 } from "gl-matrix";
+import { FrameState } from "./map";
+import { RasterSource, Source } from "./source";
+import { RasterTile, TileNum } from "./tile";
 
 interface LayerInit {
     zooms: [number, number];
@@ -14,15 +16,35 @@ export abstract class Layer {
         this.zIndex = init.zIndex ?? 1;
     }
 
-    abstract render(): void;
+    abstract render(frameState: FrameState): void;
 }
 
-export class RasterTileLayer extends Layer {
-    source?: Source<RasterTile>;
+export interface RasterLayerInit extends LayerInit {
+    url: string;
+    cacheSize: number;
+}
+export abstract class RasterTileLayer extends Layer {
+    source: Source<RasterTile>;
 
-    setSource(source: Source<RasterTile>) {
-        this.source = source;
+    constructor(init: RasterLayerInit) {
+        super(init);
+        this.source = new RasterSource(init);
     }
 
-    render() {}
+    async render(frameState: FrameState) {
+        const { camera, zoom } = frameState;
+        const viewBounds = camera.getBounds();
+        const tileNums = this.getTileNums(viewBounds, zoom);
+        const asyncIterator = this.source.loadTiles(tileNums);
+
+        for await (const tile of asyncIterator) {
+            if (tile !== null) {
+                this.renderTile(tile);
+            }
+        }
+    }
+
+    abstract getTileNums(bounds: vec4, zoom: number): TileNum[];
+
+    abstract renderTile(tile: RasterTile): any;
 }

@@ -1,19 +1,21 @@
 import { vec2 } from "gl-matrix";
-
-const R = 6371008.8;
-const Circumference = 2 * Math.PI * R;
+import { AngleToRadius, Circumference, R, RadiusToAngle } from "./Constants";
 
 export class WebMercatorProjection {
-    project(lnglat: vec2) {
-        const x = lnglat[0] * R;
-        const y = Math.tan(Math.PI / 4 + lnglat[1] / 2) * R;
+    project(lnglat: vec2 | [number, number]) {
+        const lngRad = lnglat[0] * AngleToRadius;
+        const latRad = lnglat[1] * AngleToRadius;
+        const x = lngRad * R;
+        const y = Math.log(Math.tan(Math.PI / 4 + latRad / 2)) * R;
         return vec2.fromValues(x, y);
     }
 
-    unproject(coord: vec2) {
+    unproject(coord: vec2 | [number, number]) {
         const lng = coord[0] / R;
         const lat = 2 * Math.atan(Math.exp(coord[1] / R)) - Math.PI / 2;
-        return vec2.fromValues(lng, lat);
+        const lngAngle = lng * RadiusToAngle;
+        const latAngle = lat * RadiusToAngle;
+        return vec2.fromValues(lngAngle, latAngle);
     }
 
     getResolution(zoom: number) {

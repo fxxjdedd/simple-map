@@ -1,4 +1,4 @@
-import { mat4, quat, vec2, vec3 } from "gl-matrix";
+import { mat4, quat, vec2, vec3, vec4 } from "gl-matrix";
 import { WebMercatorProjection } from "../projection/WebMercatorProjection";
 import { Vector3 } from "../util/matrix";
 
@@ -145,6 +145,6 @@ export class PerspectiveCamera {
         const minLnglat = this.projection.unproject(vec2.fromValues(minX, minY));
         const maxLnglat = this.projection.unproject(vec2.fromValues(maxX, maxY));
 
-        return [...minLnglat, maxLnglat];
+        return vec4.fromValues(minLnglat[0], minLnglat[1], maxLnglat[0], maxLnglat[0]);
     }
 }

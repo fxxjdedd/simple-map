@@ -1,9 +1,10 @@
+import { replaceURLWithTileNum } from "../util/url";
 import { InferTileContent, RasterTile, Texture2DData, Tile, TileCache, TileNum } from "./tile";
 
 export abstract class Source<T extends Tile<unknown>> {
     tileCache: TileCache<T>;
 
-    constructor(cacheSize: number) {
+    constructor(cacheSize: number = 500) {
         this.tileCache = new TileCache(cacheSize);
     }
 
@@ -33,17 +34,27 @@ export abstract class Source<T extends Tile<unknown>> {
             }
 
             if (tile.pendingTask !== undefined) {
-                return await tile.pendingTask!;
+                return (await tile.pendingTask!) as T | null;
             } else {
                 return tile;
             }
         });
 
-        const tiles = await Promise.all(loadings);
-        for (const tile of tiles) {
-            if (tile !== null) {
-                yield tile;
-            }
+        while (loadings.length) {
+            const tile = await Promise.race(
+                loadings.map(async loading => {
+                    try {
+                        return await loading;
+                    } catch (e) {
+                        throw e;
+                    } finally {
+                        const at = loadings.indexOf(loading);
+                        loadings.splice(at, 1);
+                    }
+                })
+            );
+
+            yield tile;
         }
     }
 
@@ -51,12 +62,26 @@ export abstract class Source<T extends Tile<unknown>> {
 
     abstract load(tileNum: TileNum): Promise<InferTileContent<T>>;
 }
+
+export interface RasterSourceInit {
+    url: string;
+    cacheSize: number;
+}
 export class RasterSource extends Source<RasterTile> {
+    url: string;
+
+    constructor(init: RasterSourceInit) {
+        super(init.cacheSize);
+        this.url = init.url;
+    }
+
     createTile(tileNum: TileNum): RasterTile {
         return new RasterTile(tileNum);
     }
+
     async load(tileNum: TileNum): Promise<Uint8Array> {
-        const buffer = await (await fetch("")).arrayBuffer();
+        const url = replaceURLWithTileNum(this.url, tileNum);
+        const buffer = await (await fetch(url)).arrayBuffer();
         return new Uint8Array(buffer);
     }
 }
