@@ -1,3 +1,5 @@
+import { vec4 } from "gl-matrix";
+
 export interface TileNum {
     x: number;
     y: number;
@@ -35,6 +37,8 @@ export abstract class Tile<T> {
     tileData?: T;
 
     pendingTask?: Promise<Tile<T> | null>;
+
+    coordBounds?: vec4;
 
     constructor(tileNum: TileNum) {
         this.tileNum = tileNum;

@@ -1,5 +1,5 @@
 import { mat4, quat, vec2, vec3, vec4 } from "gl-matrix";
-import { WebMercatorProjection } from "../projection/WebMercatorProjection";
+import { Projection } from "../projection/Projection";
 import { Vector3 } from "../util/matrix";
 
 export interface PerspectiveCameraTransform {
@@ -15,7 +15,7 @@ export interface PerspectiveCameraInit {
     pitch: number; // direction
     rotation: number; // up
     zoom: number;
-    projection: WebMercatorProjection;
+    projection: Projection;
 }
 
 export const CAMERA_FIXED_ALTITUDE = 1000; // z 1000 暂定
@@ -31,7 +31,7 @@ export class PerspectiveCamera {
 
     tranform: PerspectiveCameraTransform;
 
-    projection: WebMercatorProjection;
+    projection: Projection;
 
     constructor(init: PerspectiveCameraInit) {
         this.projection = init.projection;

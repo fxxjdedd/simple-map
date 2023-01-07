@@ -3,7 +3,7 @@ import { FrameState } from "./map";
 import { RasterSource, Source } from "./source";
 import { RasterTile, TileNum } from "./tile";
 
-interface LayerInit {
+export interface LayerInit {
     zooms: [number, number];
     zIndex: number;
 }
@@ -19,32 +19,26 @@ export abstract class Layer {
     abstract render(frameState: FrameState): void;
 }
 
-export interface RasterLayerInit extends LayerInit {
-    url: string;
-    cacheSize: number;
-}
 export abstract class RasterTileLayer extends Layer {
-    source: Source<RasterTile>;
+    source: RasterSource;
 
-    constructor(init: RasterLayerInit) {
+    constructor(init: LayerInit, source: RasterSource) {
         super(init);
-        this.source = new RasterSource(init);
+        this.source = source;
     }
 
     async render(frameState: FrameState) {
         const { camera, zoom } = frameState;
         const viewBounds = camera.getBounds();
-        const tileNums = this.getTileNums(viewBounds, zoom);
-        const asyncIterator = this.source.loadTiles(tileNums);
+        this.source.updateTileNums(viewBounds, zoom);
 
+        const asyncIterator = this.source.loadTiles();
         for await (const tile of asyncIterator) {
             if (tile !== null) {
                 this.renderTile(frameState, tile);
             }
         }
     }
-
-    abstract getTileNums(bounds: vec4, zoom: number): TileNum[];
 
     abstract renderTile(frameState: FrameState, tile: RasterTile): any;
 }

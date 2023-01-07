@@ -3,6 +3,8 @@ import { PerspectiveCamera } from "./perspective-camera";
 import { WebMercatorProjection } from "../projection/WebMercatorProjection";
 import { Layer } from "./layer";
 import { GLContext } from "../gl/GLContext";
+import { Projection } from "../projection/Projection";
+import { EPSGUtilSet } from "../util/tile";
 
 export interface FrameState {
     camera: PerspectiveCamera;
@@ -28,7 +30,7 @@ export class SimpleMap {
     private pitch: number;
     private rotation: number;
 
-    private projection: WebMercatorProjection;
+    private projection: Projection;
 
     private camera: PerspectiveCamera;
 
@@ -44,7 +46,7 @@ export class SimpleMap {
             rotation = 0,
             viewSize = [800, 600],
         } = init || {};
-        this.projection = new WebMercatorProjection();
+        this.projection = EPSGUtilSet["EPSG:3857"].projection;
 
         this.center = center;
         this.centerCoord = this.projection.project(center);

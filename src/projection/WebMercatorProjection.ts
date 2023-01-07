@@ -1,7 +1,8 @@
 import { vec2 } from "gl-matrix";
 import { AngleToRadius, Circumference, R, RadiusToAngle } from "./Constants";
+import { Projection } from "./Projection";
 
-export class WebMercatorProjection {
+export class WebMercatorProjection implements Projection {
     project(lnglat: vec2 | [number, number]) {
         const lngRad = lnglat[0] * AngleToRadius;
         const latRad = lnglat[1] * AngleToRadius;

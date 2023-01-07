@@ -1,15 +1,18 @@
+import { vec4 } from "gl-matrix";
+import { EPSGUtilSet } from "../util/tile";
 import { replaceURLWithTileNum } from "../util/url";
 import { InferTileContent, RasterTile, Texture2DData, Tile, TileCache, TileNum } from "./tile";
 
 export abstract class Source<T extends Tile<unknown>> {
     tileCache: TileCache<T>;
+    tileNums: TileNum[] = [];
 
     constructor(cacheSize: number = 500) {
         this.tileCache = new TileCache(cacheSize);
     }
 
-    async *loadTiles(tileNums: TileNum[]) {
-        const loadings = tileNums.map(async tileNum => {
+    async *loadTiles() {
+        const loadings = this.tileNums.map(async tileNum => {
             let tile = this.tileCache.get(tileNum);
 
             if (!tile) {
@@ -64,19 +67,28 @@ export abstract class Source<T extends Tile<unknown>> {
 }
 
 export interface RasterSourceInit {
+    code: string;
     url: string;
     cacheSize: number;
 }
 export class RasterSource extends Source<RasterTile> {
+    code: string;
     url: string;
 
     constructor(init: RasterSourceInit) {
         super(init.cacheSize);
         this.url = init.url;
+        this.code = init.code;
     }
 
     createTile(tileNum: TileNum): RasterTile {
-        return new RasterTile(tileNum);
+        const tile = new RasterTile(tileNum);
+        tile.coordBounds = EPSGUtilSet[this.code].getTileCoordBounds(tileNum);
+        return tile;
+    }
+
+    updateTileNums(bounds: vec4, zoom: number) {
+        this.tileNums = EPSGUtilSet[this.code].getBoundsTileNums(bounds, zoom);
     }
 
     async load(tileNum: TileNum): Promise<Uint8Array> {
