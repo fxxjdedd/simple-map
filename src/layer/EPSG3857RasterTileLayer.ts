@@ -11,8 +11,6 @@ export interface EPSG3857RasterTileLayerInit extends LayerInit {
 }
 
 export class EPSG3857RasterTileLayer extends RasterTileLayer {
-    projection = new WebMercatorProjection();
-
     constructor(init: EPSG3857RasterTileLayerInit) {
         const source = new RasterSource({
             ...init,

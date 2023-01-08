@@ -1,6 +1,7 @@
 import { GLContext } from "../gl/GLContext";
 
-export function renderTexture2D(gl: GLContext, textureData: Uint8Array) {
-    gl.ctx.clearColor(0, 1, 0, 1);
-    gl.ctx.clear(gl.ctx.COLOR_BUFFER_BIT);
+export function renderTexture2D(glContext: GLContext, textureData: Uint8Array) {
+    const { ctx } = glContext;
+    ctx.clearColor(0, 1, 0, 1);
+    ctx.clear(ctx.COLOR_BUFFER_BIT);
 }
