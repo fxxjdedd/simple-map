@@ -20,9 +20,15 @@ export class EPSG3857RasterTileLayer extends RasterTileLayer {
     }
 
     renderTile(frameState: FrameState, tile: RasterTile) {
-        const { gl } = frameState;
+        const { gl, camera } = frameState;
         console.log("renderTile", tile);
 
-        renderTexture2D(gl, tile.tileData!);
+        renderTexture2D(gl, {
+            mvp: camera.getVPMatrix(),
+            vertex: tile.boundsPositionBuffer!,
+            indices: tile.indexBuffer!,
+            textureData: tile.textureBuffer!,
+            texture: tile.texture!,
+        });
     }
 }

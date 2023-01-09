@@ -52,7 +52,8 @@ export class RasterTile extends Tile<Texture2DData> {
 
     private _boundsPositionBuffer?: WebGLBuffer;
     private _indexBuffer?: WebGLBuffer;
-    private _textureBuffer?: WebGLTexture;
+    private _textureBuffer?: WebGLBuffer;
+    private _texture?: WebGLTexture;
 
     get boundsPositionBuffer() {
         if (!this.glContext || !this.coordBounds) return null;
@@ -72,7 +73,7 @@ export class RasterTile extends Tile<Texture2DData> {
             gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(positions), gl.STATIC_DRAW);
             this._boundsPositionBuffer = buffer!;
         }
-        return this._boundsPositionBuffer;
+        return this._boundsPositionBuffer!;
     }
 
     get indexBuffer() {
@@ -89,7 +90,7 @@ export class RasterTile extends Tile<Texture2DData> {
             gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(indices), gl.STATIC_DRAW);
             this._indexBuffer = buffer!;
         }
-        return this._indexBuffer;
+        return this._indexBuffer!;
     }
 
     get textureBuffer() {
@@ -113,12 +114,32 @@ export class RasterTile extends Tile<Texture2DData> {
 
             this._textureBuffer = buffer!;
         }
-        return this._textureBuffer;
+        return this._textureBuffer!;
     }
 
     get texture() {
         if (!this.glContext) return null;
-        const a = this.glContext?.ctx.createTexture();
+        if (!this.tileData) return null;
+        if (!this._texture) {
+            const gl = this.glContext.ctx;
+            const texture = gl.createTexture();
+            gl.bindTexture(gl.TEXTURE_2D, texture);
+            gl.texImage2D(
+                gl.TEXTURE_2D,
+                0,
+                gl.RGBA,
+                gl.RGBA,
+                gl.UNSIGNED_BYTE,
+                256,
+                256,
+                0,
+                this.tileData
+            );
+            gl.generateMipmap(gl.TEXTURE_2D);
+
+            this._texture = texture!;
+        }
+        return this._texture!;
     }
 }
 
