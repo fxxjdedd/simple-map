@@ -1,7 +1,7 @@
 import { GLContext } from "../gl/GLContext";
 import { shaders } from "../shaders";
 
-const programCache: Record<string, WebGLProgram> = {};
+const programCache: Record<string, Program> = {};
 
 export function getProgram(name: string, glContext: GLContext) {
     if (programCache[name]) {
@@ -10,11 +10,72 @@ export function getProgram(name: string, glContext: GLContext) {
 
     if (name in shaders) {
         const { vertex, fragment } = shaders[name];
-        const program = initShaderProgram(glContext.ctx, vertex, fragment);
-        programCache[name] = program;
-        return program;
+        const shaderProgram = initShaderProgram(glContext.gl, vertex, fragment);
+        programCache[name] = new Program(glContext, shaderProgram, {}, {});
+        return programCache[name];
     }
     return null;
+}
+
+class Program {
+    constructor(
+        public context: GLContext,
+        public shaderProgram: WebGLProgram,
+        public attribs: Record<string, number>,
+        public uniforms: Record<string, WebGLUniformLocation>
+    ) {}
+
+    get gl() {
+        return this.context.gl;
+    }
+
+    draw(
+        indices: WebGLBuffer,
+        attribBuffers: Record<
+            string,
+            {
+                size: number;
+                type: GLenum;
+                stride: number;
+                offset: number;
+                normalize: boolean;
+                value: WebGLBuffer;
+            }
+        >,
+        uniformValues: Record<string, { type: string; value: any }>
+    ) {
+        for (const key in this.attribs) {
+            let attribBuffer = attribBuffers[key];
+            if (attribBuffer) {
+                this.gl.bindBuffer(this.gl.ARRAY_BUFFER, attribBuffer.value);
+                this.gl.vertexAttribPointer(
+                    this.attribs[key],
+                    attribBuffer.size,
+                    attribBuffer.type,
+                    attribBuffer.normalize,
+                    attribBuffer.stride,
+                    attribBuffer.offset
+                );
+                this.gl.enableVertexAttribArray(this.attribs[key]);
+            }
+        }
+        this.gl.bindBuffer(this.gl.ELEMENT_ARRAY_BUFFER, indices);
+        this.gl.useProgram(this.shaderProgram);
+
+        for (const key in this.uniforms) {
+            let uniformValue = uniformValues[key];
+            if (uniformValue) {
+                (this.gl as any)[`uniform${uniformValue.type}`](
+                    this.uniforms[key],
+                    false,
+                    uniformValue.value
+                );
+            }
+        }
+
+        // TODO: deal with texture
+        // TODO: deal with vao
+    }
 }
 
 function initShaderProgram(gl: WebGLRenderingContext, vert: string, frag: string) {

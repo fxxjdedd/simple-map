@@ -9,7 +9,7 @@ import { EPSGUtilSet } from "../util/tile";
 export interface FrameState {
     camera: PerspectiveCamera;
     zoom: number;
-    gl: GLContext;
+    context: GLContext;
 }
 
 export interface SimpleMapInit {
@@ -36,7 +36,7 @@ export class SimpleMap {
 
     private layers: Set<Layer> = new Set();
 
-    private gl: GLContext;
+    private context: GLContext;
 
     constructor(container: string, init?: Partial<SimpleMapInit>) {
         const {
@@ -63,7 +63,7 @@ export class SimpleMap {
             projection: this.projection,
         });
 
-        this.gl = new GLContext(container);
+        this.context = new GLContext(container);
 
         this.requestRender();
     }
@@ -101,7 +101,7 @@ export class SimpleMap {
         const frameState: FrameState = {
             camera: this.camera,
             zoom: this.zoom,
-            gl: this.gl,
+            context: this.context,
         };
 
         this.requestRenderLoop(() => {
@@ -111,6 +111,7 @@ export class SimpleMap {
 
     private renderFrame(frameState: FrameState) {
         console.log("renderFrame");
+        this.context.clear();
         for (const layer of this.layers) {
             layer.render(frameState);
         }

@@ -1,6 +1,6 @@
 export class GLContext {
     container: HTMLElement;
-    ctx: WebGLRenderingContext;
+    gl: WebGLRenderingContext;
 
     constructor(container: string) {
         this.container = document.getElementById(container)!;
@@ -8,7 +8,19 @@ export class GLContext {
         canvas.width = this.container.clientWidth;
         canvas.height = this.container.clientHeight;
         this.container.appendChild(canvas);
-        this.ctx = canvas.getContext("webgl")!;
-        this.ctx.viewport(0, 0, canvas.width, canvas.height);
+        this.gl = canvas.getContext("webgl")!;
+        this.gl.viewport(0, 0, canvas.width, canvas.height);
+    }
+
+    clear() {
+        this.gl.clearColor(0, 0, 0, 1);
+        this.gl.clearDepth(1);
+        this.gl.enable(this.gl.DEPTH_TEST);
+        this.gl.depthFunc(this.gl.LEQUAL);
+        this.gl.clear(this.gl.COLOR_BUFFER_BIT | this.gl.DEPTH_BUFFER_BIT);
+    }
+
+    activeTexture(n: number) {
+        this.gl.activeTexture(n);
     }
 }

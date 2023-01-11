@@ -52,13 +52,13 @@ export class RasterTile extends Tile<Texture2DData> {
 
     private _boundsPositionBuffer?: WebGLBuffer;
     private _indexBuffer?: WebGLBuffer;
-    private _textureBuffer?: WebGLBuffer;
+    private _uvBuffer?: WebGLBuffer;
     private _texture?: WebGLTexture;
 
     get boundsPositionBuffer() {
         if (!this.glContext || !this.coordBounds) return null;
         if (!this._boundsPositionBuffer) {
-            const gl = this.glContext.ctx;
+            const gl = this.glContext.gl;
             const buffer = gl.createBuffer();
             gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
             const [minX, minY, maxX, maxY] = this.coordBounds;
@@ -79,7 +79,7 @@ export class RasterTile extends Tile<Texture2DData> {
     get indexBuffer() {
         if (!this.glContext) return null;
         if (!this._indexBuffer) {
-            const gl = this.glContext.ctx;
+            const gl = this.glContext.gl;
             const buffer = gl.createBuffer();
             gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
             // prettier-ignore
@@ -93,10 +93,10 @@ export class RasterTile extends Tile<Texture2DData> {
         return this._indexBuffer!;
     }
 
-    get textureBuffer() {
+    get uvBuffer() {
         if (!this.glContext) return null;
-        if (!this._textureBuffer) {
-            const gl = this.glContext.ctx;
+        if (!this._uvBuffer) {
+            const gl = this.glContext.gl;
             const buffer = gl.createBuffer();
             gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
 
@@ -112,16 +112,16 @@ export class RasterTile extends Tile<Texture2DData> {
 
             gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(uv), gl.STATIC_DRAW);
 
-            this._textureBuffer = buffer!;
+            this._uvBuffer = buffer!;
         }
-        return this._textureBuffer!;
+        return this._uvBuffer!;
     }
 
     get texture() {
         if (!this.glContext) return null;
         if (!this.tileData) return null;
         if (!this._texture) {
-            const gl = this.glContext.ctx;
+            const gl = this.glContext.gl;
             const texture = gl.createTexture();
             gl.bindTexture(gl.TEXTURE_2D, texture);
             gl.texImage2D(

@@ -9,17 +9,23 @@ interface RenderOptions {
 }
 
 interface TextureRenderOptions extends RenderOptions {
-    textureData: WebGLBuffer;
+    uv: WebGLBuffer;
     texture: WebGLTexture;
 }
 
 export function renderTexture2D(glContext: GLContext, options: TextureRenderOptions) {
     const program = getProgram("texture2D", glContext);
-    const { ctx: gl } = glContext;
+    const { gl } = glContext;
 
-    gl.clearColor(0, 0, 0, 1);
-    gl.clearDepth(1);
-    gl.enable(gl.DEPTH_TEST);
-    gl.depthFunc(gl.LEQUAL);
-    gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+    if (!program) {
+        throw new Error(`program texture2D not found.`);
+    }
+
+    const mvp = gl.getUniformLocation(program, "uMVP");
+    const sampler = gl.getUniformLocation(program, "uSampler");
+
+    const vertexPosition = gl.getAttribLocation(program, "aVertexPosition");
+    const textureCoord = gl.getAttribLocation(program, "aTextureCoord");
+
+    glContext.activeTexture(0);
 }
