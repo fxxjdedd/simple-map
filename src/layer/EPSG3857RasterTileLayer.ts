@@ -1,4 +1,4 @@
-import { LayerInit, RasterTileLayer } from "../core/layer";
+import { LayerInit, RasterTileLayer } from "../core/Layer";
 import { FrameState } from "../core/map";
 import { RasterSource } from "../core/source";
 import { RasterTile, TileNum } from "../core/tile";

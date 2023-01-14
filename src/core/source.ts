@@ -1,7 +1,7 @@
 import { vec4 } from "gl-matrix";
 import { EPSGUtilSet } from "../util/tile";
 import { replaceURLWithTileNum } from "../util/url";
-import { InferTileContent, RasterTile, Texture2DData, Tile, TileCache, TileNum } from "./tile";
+import { InferTileContent, RasterTile, Texture2DData, Tile, TileCache, TileNum } from "./Tile";
 
 export abstract class Source<T extends Tile<unknown>> {
     tileCache: TileCache<T>;

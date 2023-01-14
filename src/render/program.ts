@@ -21,8 +21,8 @@ class Program {
     constructor(
         public context: GLContext,
         public shaderProgram: WebGLProgram,
-        public attribs: Record<string, number>,
-        public uniforms: Record<string, WebGLUniformLocation>
+        public attribLocations: Record<string, number>,
+        public uniformLocations: Record<string, WebGLUniformLocation>
     ) {}
 
     get gl() {
@@ -44,34 +44,36 @@ class Program {
         >,
         uniformValues: Record<string, { type: string; value: any }>
     ) {
-        for (const key in this.attribs) {
+        for (const key in this.attribLocations) {
             let attribBuffer = attribBuffers[key];
             if (attribBuffer) {
                 this.gl.bindBuffer(this.gl.ARRAY_BUFFER, attribBuffer.value);
                 this.gl.vertexAttribPointer(
-                    this.attribs[key],
+                    this.attribLocations[key],
                     attribBuffer.size,
                     attribBuffer.type,
                     attribBuffer.normalize,
                     attribBuffer.stride,
                     attribBuffer.offset
                 );
-                this.gl.enableVertexAttribArray(this.attribs[key]);
+                this.gl.enableVertexAttribArray(this.attribLocations[key]);
             }
         }
         this.gl.bindBuffer(this.gl.ELEMENT_ARRAY_BUFFER, indices);
         this.gl.useProgram(this.shaderProgram);
 
-        for (const key in this.uniforms) {
+        for (const key in this.uniformLocations) {
             let uniformValue = uniformValues[key];
             if (uniformValue) {
                 (this.gl as any)[`uniform${uniformValue.type}`](
-                    this.uniforms[key],
+                    this.uniformLocations[key],
                     false,
                     uniformValue.value
                 );
             }
         }
+
+        // this.gl.drawElements(this.gl.TRIANGLES);
 
         // TODO: deal with texture
         // TODO: deal with vao
@@ -106,3 +108,12 @@ function loadShader(gl: WebGLRenderingContext, type: GLenum, source: string) {
     }
     return shader;
 }
+
+// segements是对于一个buffer的分段render
+// 一个buffer可以有很多个attributes，分散在这个buffer中
+// 一个segment指定的是，每个attributes各自的一小段
+
+// draw是对一个buffer的render，这个buffer有几个segemnt就render几次
+// 这一个buffer是一个layer的渲染内容。如果有多个layer，就是多次draw。
+
+// layer是对一个buffer的生成和更新，并对buffer根据业务需求进行segment分段

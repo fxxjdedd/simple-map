@@ -1,7 +1,7 @@
 import { vec2, vec3 } from "gl-matrix";
-import { PerspectiveCamera } from "./perspective-camera";
+import { PerspectiveCamera } from "./Camera";
 import { WebMercatorProjection } from "../projection/WebMercatorProjection";
-import { Layer } from "./layer";
+import { Layer } from "./Layer";
 import { GLContext } from "../gl/GLContext";
 import { Projection } from "../projection/Projection";
 import { EPSGUtilSet } from "../util/tile";
