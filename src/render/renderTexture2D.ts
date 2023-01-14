@@ -1,16 +1,17 @@
 import { mat4 } from "gl-matrix";
+import { GLTextureData } from "../gl/GLTextureData";
+import { GLIndexBufferObject, GLVertexBufferObject } from "../gl/GLBufferData";
 import { GLContext } from "../gl/GLContext";
-import { getProgram } from "./program";
+import { getProgram } from "./Program";
 
 interface RenderOptions {
     mvp: mat4;
-    vertex: WebGLBuffer;
-    indices: WebGLBuffer;
+    glVertexBufferObject: GLVertexBufferObject;
+    glIndexBufferObject: GLIndexBufferObject;
 }
 
 interface TextureRenderOptions extends RenderOptions {
-    uv: WebGLBuffer;
-    texture: WebGLTexture;
+    glTextureData: GLTextureData;
 }
 
 export function renderTexture2D(glContext: GLContext, options: TextureRenderOptions) {

@@ -2,7 +2,8 @@ import { LayerInit, RasterTileLayer } from "../core/Layer";
 import { FrameState } from "../core/map";
 import { RasterSource } from "../core/source";
 import { RasterTile, TileNum } from "../core/tile";
-import { WebMercatorProjection } from "../projection/WebMercatorProjection";
+import { GLIndexBufferObject, GLVertexBufferObject } from "../gl/GLBufferData";
+import { GLTextureData } from "../gl/GLTextureData";
 import { renderTexture2D } from "../render/renderTexture2D";
 
 export interface EPSG3857RasterTileLayerInit extends LayerInit {
@@ -23,12 +24,16 @@ export class EPSG3857RasterTileLayer extends RasterTileLayer {
         const { context, camera } = frameState;
         console.log("renderTile", tile);
 
+        const { tileData } = tile;
+
+        const glVertexBufferObject = new GLVertexBufferObject(context, tileData!.rasterData);
+        const glIndexBufferObject = new GLIndexBufferObject(context, tileData!.indexData);
+
         renderTexture2D(context, {
             mvp: camera.getVPMatrix(),
-            vertex: tile.boundsPositionBuffer!,
-            indices: tile.indexBuffer!,
-            uv: tile.uvBuffer!,
-            texture: tile.texture!,
+            glVertexBufferObject,
+            glIndexBufferObject,
+            glTextureData: tileData!.textureData,
         });
     }
 }

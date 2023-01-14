@@ -1,5 +1,6 @@
 import { vec4 } from "gl-matrix";
-import { GLContext } from "../gl/GLContext";
+import { IndexStructuredData, RasterStructuredData } from "../data/allStructuredData";
+import { GLTextureData } from "../gl/GLTextureData";
 
 export interface TileNum {
     x: number;
@@ -44,103 +45,14 @@ export abstract class Tile<T> {
     }
 }
 
-export type Texture2DData = Uint8Array;
+interface RasterTileData {
+    rasterData: RasterStructuredData;
+    indexData: IndexStructuredData;
+    textureData: GLTextureData;
+}
 
-export class RasterTile extends Tile<Texture2DData> {
+export class RasterTile extends Tile<RasterTileData> {
     coordBounds?: vec4;
-    glContext?: GLContext;
-
-    private _boundsPositionBuffer?: WebGLBuffer;
-    private _indexBuffer?: WebGLBuffer;
-    private _uvBuffer?: WebGLBuffer;
-    private _texture?: WebGLTexture;
-
-    get boundsPositionBuffer() {
-        if (!this.glContext || !this.coordBounds) return null;
-        if (!this._boundsPositionBuffer) {
-            const gl = this.glContext.gl;
-            const buffer = gl.createBuffer();
-            gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
-            const [minX, minY, maxX, maxY] = this.coordBounds;
-            // prettier-ignore
-            const positions = [
-                minX, minY, 0, 
-                maxX, minY, 0, 
-                maxX, maxY, 0, 
-                minX, maxY, 0
-            ];
-
-            gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(positions), gl.STATIC_DRAW);
-            this._boundsPositionBuffer = buffer!;
-        }
-        return this._boundsPositionBuffer!;
-    }
-
-    get indexBuffer() {
-        if (!this.glContext) return null;
-        if (!this._indexBuffer) {
-            const gl = this.glContext.gl;
-            const buffer = gl.createBuffer();
-            gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
-            // prettier-ignore
-            const indices = [
-                0, 1, 2,
-                0, 2, 3
-            ];
-            gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(indices), gl.STATIC_DRAW);
-            this._indexBuffer = buffer!;
-        }
-        return this._indexBuffer!;
-    }
-
-    get uvBuffer() {
-        if (!this.glContext) return null;
-        if (!this._uvBuffer) {
-            const gl = this.glContext.gl;
-            const buffer = gl.createBuffer();
-            gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
-
-            // prettier-ignore
-            const uv = [
-                0, 0,
-                1, 0,
-                1, 1,
-                0, 0,
-                1, 1,
-                0, 1
-            ]
-
-            gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(uv), gl.STATIC_DRAW);
-
-            this._uvBuffer = buffer!;
-        }
-        return this._uvBuffer!;
-    }
-
-    get texture() {
-        if (!this.glContext) return null;
-        if (!this.tileData) return null;
-        if (!this._texture) {
-            const gl = this.glContext.gl;
-            const texture = gl.createTexture();
-            gl.bindTexture(gl.TEXTURE_2D, texture);
-            gl.texImage2D(
-                gl.TEXTURE_2D,
-                0,
-                gl.RGBA,
-                gl.RGBA,
-                gl.UNSIGNED_BYTE,
-                256,
-                256,
-                0,
-                this.tileData
-            );
-            gl.generateMipmap(gl.TEXTURE_2D);
-
-            this._texture = texture!;
-        }
-        return this._texture!;
-    }
 }
 
 export type InferTileContent<T> = T extends Tile<infer E> ? E : never;

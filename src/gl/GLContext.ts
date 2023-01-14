@@ -1,3 +1,5 @@
+import { TypedArray } from "../util/buffer";
+
 export class GLContext {
     container: HTMLElement;
     gl: WebGLRenderingContext;
@@ -22,5 +24,25 @@ export class GLContext {
 
     activeTexture(n: number) {
         this.gl.activeTexture(n);
+    }
+
+    createBuffer() {
+        return this.gl.createBuffer()!;
+    }
+
+    bindVertexBuffer(buffer: WebGLBuffer) {
+        this.gl.bindBuffer(this.gl.ARRAY_BUFFER, buffer);
+    }
+
+    bindIndexBuffer(buffer: WebGLBuffer) {
+        this.gl.bindBuffer(this.gl.ELEMENT_ARRAY_BUFFER, buffer);
+    }
+
+    bufferVertexData(view: TypedArray) {
+        this.gl.bufferData(this.gl.ARRAY_BUFFER, view, this.gl.STATIC_DRAW);
+    }
+
+    bufferIndexData(view: TypedArray) {
+        this.gl.bufferData(this.gl.ELEMENT_ARRAY_BUFFER, view, this.gl.STATIC_DRAW);
     }
 }

@@ -1,7 +1,9 @@
 import { vec4 } from "gl-matrix";
+import { IndexStructuredData, RasterStructuredData } from "../data/allStructuredData";
+import { GLTextureData } from "../gl/GLTextureData";
 import { EPSGUtilSet } from "../util/tile";
 import { replaceURLWithTileNum } from "../util/url";
-import { InferTileContent, RasterTile, Texture2DData, Tile, TileCache, TileNum } from "./Tile";
+import { InferTileContent, RasterTile, Tile, TileCache, TileNum } from "./Tile";
 
 export abstract class Source<T extends Tile<unknown>> {
     tileCache: TileCache<T>;
@@ -20,7 +22,7 @@ export abstract class Source<T extends Tile<unknown>> {
 
                 this.tileCache.set(tileNum, newTile);
 
-                const task = this.load(tileNum)
+                const task = this.load(newTile)
                     .then(tileData => {
                         newTile.tileData = tileData;
                         newTile.pendingTask = undefined;
@@ -63,7 +65,7 @@ export abstract class Source<T extends Tile<unknown>> {
 
     abstract createTile(tileNum: TileNum): T;
 
-    abstract load(tileNum: TileNum): Promise<InferTileContent<T>>;
+    abstract load(tile: T): Promise<InferTileContent<T>>;
 }
 
 export interface RasterSourceInit {
@@ -91,10 +93,52 @@ export class RasterSource extends Source<RasterTile> {
         this.tileNums = EPSGUtilSet[this.code].getBoundsTileNums(bounds, zoom);
     }
 
-    async load(tileNum: TileNum): Promise<Uint8Array> {
+    async load(tile: RasterTile) {
+        const { tileNum, coordBounds } = tile;
         console.log(`load tileNum: ${tileNum.z}/${tileNum.x}/${tileNum.y}`);
         const url = replaceURLWithTileNum(this.url, tileNum);
         const buffer = await (await fetch(url)).arrayBuffer();
-        return new Uint8Array(buffer);
+        const imageData = new ImageData(new Uint8ClampedArray(buffer), 256, 256);
+        const textureData = new GLTextureData(imageData);
+
+        const rasterData = new RasterStructuredData();
+
+        const [minX, minY, maxX, maxY] = coordBounds!;
+        // prettier-ignore
+        const positions = [
+            minX, minY, 0, 
+            maxX, minY, 0, 
+            maxX, maxY, 0, 
+            minX, maxY, 0
+        ];
+        // prettier-ignore
+        const uv = [
+            0, 0,
+            1, 0,
+            1, 1,
+            0, 0,
+            1, 1,
+            0, 1
+        ]
+        rasterData.merge({
+            a_pos: positions,
+            a_uv: uv,
+        });
+
+        const indexData = new IndexStructuredData();
+        // prettier-ignore
+        const triangles = [
+            0, 1, 2,
+            0, 2, 3
+        ]
+        indexData.merge({
+            a_index: triangles,
+        });
+
+        return {
+            rasterData,
+            indexData,
+            textureData,
+        };
     }
 }
