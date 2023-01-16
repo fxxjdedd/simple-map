@@ -1,4 +1,4 @@
-import { StructuredData, TypedArrayCode } from "../util/buffer";
+import { getElementSizeOfCode, StructuredData, TypedArrayCode } from "../util/buffer";
 
 const indexStructuredDataLayout = StructuredData.createLayout({
     a_index: {
@@ -10,6 +10,16 @@ const indexStructuredDataLayout = StructuredData.createLayout({
 export class IndexStructuredData extends StructuredData<typeof indexStructuredDataLayout> {
     constructor() {
         super(indexStructuredDataLayout);
+    }
+
+    getTrangleType() {
+        return this.accessors.a_index.type;
+    }
+
+    getTrangleCount() {
+        const { type, components, stride } = this.accessors.a_index;
+        const oneLayoutSize = this._getOneOfLayoutSize(type, components);
+        return (this.buffer.byteLength / stride) * oneLayoutSize;
     }
 }
 

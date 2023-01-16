@@ -17,16 +17,11 @@ interface TextureRenderOptions extends RenderOptions {
 export function renderTexture2D(glContext: GLContext, options: TextureRenderOptions) {
     const program = getProgram("texture2D", glContext);
     const { gl } = glContext;
+    const { glVertexBufferObject, glIndexBufferObject, glTextureData } = options;
 
     if (!program) {
         throw new Error(`program texture2D not found.`);
     }
-
-    const mvp = gl.getUniformLocation(program, "uMVP");
-    const sampler = gl.getUniformLocation(program, "uSampler");
-
-    const vertexPosition = gl.getAttribLocation(program, "aVertexPosition");
-    const textureCoord = gl.getAttribLocation(program, "aTextureCoord");
 
     glContext.activeTexture(0);
 }

@@ -120,7 +120,7 @@ export class StructuredData<TLayout extends BufferLayout> {
         let size = 0;
         for (const name in this.layout) {
             const l = this.layout[name];
-            size += this._getOneLayoutSize(l.type, l.components);
+            size += this._getOneOfLayoutSize(l.type, l.components);
         }
         return size;
     }
@@ -136,7 +136,7 @@ export class StructuredData<TLayout extends BufferLayout> {
                 offset,
                 stride: this.layoutSize, // might not need here
             };
-            offset += this._getOneLayoutSize(l.type, l.components);
+            offset += this._getOneOfLayoutSize(l.type, l.components);
         }
     }
 
@@ -149,7 +149,7 @@ export class StructuredData<TLayout extends BufferLayout> {
             const l = this.layout[name];
             const lv = layoutValue[name];
             this._appendTypedValue(l.type, lv, len);
-            len += this._getOneLayoutSize(l.type, l.components);
+            len += this._getOneOfLayoutSize(l.type, l.components);
         }
     }
 
@@ -172,7 +172,7 @@ export class StructuredData<TLayout extends BufferLayout> {
             const l = this.layout[name];
             const m = merges[name];
             this._mergeTypedValue(l.type, m, len, l.components, this.layoutSize);
-            len += this._getOneLayoutSize(l.type, l.components);
+            len += this._getOneOfLayoutSize(l.type, l.components);
         }
     }
 
@@ -186,13 +186,31 @@ export class StructuredData<TLayout extends BufferLayout> {
         }
     }
 
-    private _appendTypedValue(type: number, value: number[], offset: number) {
+    pickData(accessor: BufferAccessor) {
+        const { type, components, offset, stride } = accessor;
+        const oneLayoutSize = this._getOneOfLayoutSize(type, components);
+        const byteLength = (this.buffer.byteLength / stride) * oneLayoutSize;
+
+        if (!Number.isInteger(byteLength)) {
+            throw new Error(`Wrong accessor picking byte length: ${byteLength}.`);
+        }
+
+        const pickingResult = new Uint8Array(byteLength);
+
+        for (let i = offset, j = 0; i < this.buffer.length; i += stride, j += oneLayoutSize) {
+            const sub = this.buffer.subarray(i, i + oneLayoutSize);
+            pickingResult.set(sub, j);
+        }
+        return pickingResult;
+    }
+
+    protected _appendTypedValue(type: number, value: number[], offset: number) {
         const ctor = getArrayCtorOfCode(type);
         const typedArray = new ctor(value);
         writeBuffer(this.buffer, typedArray, offset);
     }
 
-    private _mergeTypedValue(
+    protected _mergeTypedValue(
         type: number,
         value: number[],
         offset: number,
@@ -210,7 +228,7 @@ export class StructuredData<TLayout extends BufferLayout> {
         }
     }
 
-    private _getOneLayoutSize(type: number, components: number) {
+    protected _getOneOfLayoutSize(type: number, components: number) {
         const elemSize = getElementSizeOfCode(type);
         return elemSize * components;
     }

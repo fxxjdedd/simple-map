@@ -1,4 +1,6 @@
+import { getGLType, GLIndexBufferObject, GLVertexBufferObject } from "../gl/GLBufferData";
 import { GLContext } from "../gl/GLContext";
+import { GLUniforms } from "../gl/GLUniforms";
 import { shaders } from "../shaders";
 
 const programCache: Record<string, Program> = {};
@@ -9,74 +11,70 @@ export function getProgram(name: string, glContext: GLContext) {
     }
 
     if (name in shaders) {
-        const { vertex, fragment } = shaders[name];
+        const { vertex, fragment, attributes, uniforms } = shaders[name];
         const shaderProgram = initShaderProgram(glContext.gl, vertex, fragment);
-        programCache[name] = new Program(glContext, shaderProgram, {}, {});
+
+        const attribLocations: Record<string, number> = {};
+        for (const attrName of attributes) {
+            // TODO: gl.bindAttribLocation can make attrib layout stable.
+            attribLocations[attrName] = glContext.gl.getAttribLocation(shaderProgram, attrName);
+        }
+
+        const uniformLocations: Record<string, WebGLUniformLocation> = {};
+        for (const uniformName of uniforms) {
+            uniformLocations[uniformName] = glContext.gl.getUniformLocation(
+                shaderProgram,
+                uniformName
+            )!;
+        }
+
+        programCache[name] = new Program(
+            glContext,
+            shaderProgram,
+            attribLocations,
+            uniformLocations
+        );
         return programCache[name];
     }
     return null;
 }
 
-class Program {
+export class Program {
+    uniforms: GLUniforms;
+
+    get gl() {
+        return this.glContext.gl;
+    }
+
     constructor(
-        public context: GLContext,
+        public glContext: GLContext,
         public shaderProgram: WebGLProgram,
         public attribLocations: Record<string, number>,
         public uniformLocations: Record<string, WebGLUniformLocation>
-    ) {}
-
-    get gl() {
-        return this.context.gl;
+    ) {
+        this.uniforms = new GLUniforms(glContext, uniformLocations);
     }
 
     draw(
-        indices: WebGLBuffer,
-        attribBuffers: Record<
-            string,
-            {
-                size: number;
-                type: GLenum;
-                stride: number;
-                offset: number;
-                normalize: boolean;
-                value: WebGLBuffer;
-            }
-        >,
+        vbo: GLVertexBufferObject,
+        ebo: GLIndexBufferObject,
         uniformValues: Record<string, { type: string; value: any }>
     ) {
-        for (const key in this.attribLocations) {
-            let attribBuffer = attribBuffers[key];
-            if (attribBuffer) {
-                this.gl.bindBuffer(this.gl.ARRAY_BUFFER, attribBuffer.value);
-                this.gl.vertexAttribPointer(
-                    this.attribLocations[key],
-                    attribBuffer.size,
-                    attribBuffer.type,
-                    attribBuffer.normalize,
-                    attribBuffer.stride,
-                    attribBuffer.offset
-                );
-                this.gl.enableVertexAttribArray(this.attribLocations[key]);
-            }
-        }
-        this.gl.bindBuffer(this.gl.ELEMENT_ARRAY_BUFFER, indices);
-        this.gl.useProgram(this.shaderProgram);
-
-        for (const key in this.uniformLocations) {
-            let uniformValue = uniformValues[key];
-            if (uniformValue) {
-                (this.gl as any)[`uniform${uniformValue.type}`](
-                    this.uniformLocations[key],
-                    false,
-                    uniformValue.value
-                );
-            }
+        for (const uniformName in uniformValues) {
+            this.uniforms.setValue(uniformName, uniformValues[uniformName]);
         }
 
-        // this.gl.drawElements(this.gl.TRIANGLES);
+        vbo.bind();
+        vbo.enableVertexAttribArray(this);
+        vbo.setVertexAttribPointer(this);
 
-        // TODO: deal with texture
-        // TODO: deal with vao
+        ebo.bind();
+        this.gl.drawElements(
+            this.gl.TRIANGLES,
+            ebo.data.getTrangleCount(),
+            getGLType(this.gl, ebo.data.getTrangleType()),
+            0 // keep at 0 until we have segment abstraction
+        );
     }
 }
 

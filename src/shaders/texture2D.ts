@@ -20,3 +20,7 @@ void main(void) {
   gl_FragColor = texture2D(uSampler, vTextureCoord);
 }
 `;
+
+export const attributes = ["aVertexPosition", "aTextureCoord"];
+
+export const uniforms = ["uMVP", "uSampler"];
