@@ -7,7 +7,7 @@ export class GLTexture {
         return this.glContext.gl;
     }
 
-    constructor(public glContext: GLContext, public image: ImageData) {
+    constructor(public glContext: GLContext, public image: HTMLImageElement) {
         this.texture = this.gl.createTexture()!;
         this.bind();
         const gl = this.gl;

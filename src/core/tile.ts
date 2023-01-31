@@ -47,7 +47,7 @@ export abstract class Tile<T> {
 interface RasterTileData {
     rasterData: RasterStructuredData;
     indexData: IndexStructuredData;
-    imageData: ImageData;
+    image: HTMLImageElement;
 }
 
 export class RasterTile extends Tile<RasterTileData> {

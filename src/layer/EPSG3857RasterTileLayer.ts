@@ -28,7 +28,7 @@ export class EPSG3857RasterTileLayer extends RasterTileLayer {
 
         const glVertexBufferObject = new GLVertexBufferObject(context, tileData!.rasterData);
         const glIndexBufferObject = new GLIndexBufferObject(context, tileData!.indexData);
-        const glTexture = new GLTexture(context, tileData!.imageData);
+        const glTexture = new GLTexture(context, tileData!.image);
 
         renderTexture2D(context, {
             mvp: camera.getVPMatrix(),
