@@ -4,7 +4,7 @@
   "description": "just a simple map",
   "main": "index.js",
   "scripts": {
-    "dev": "vite",
+    "dev": "(cd examples && vite)",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {
