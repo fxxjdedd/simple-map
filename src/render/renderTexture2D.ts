@@ -1,6 +1,6 @@
 import { mat4 } from "gl-matrix";
-import { GLTextureData } from "../gl/GLTextureData";
-import { GLIndexBufferObject, GLVertexBufferObject } from "../gl/GLBufferData";
+import { GLTexture } from "../gl/GLTexture";
+import { GLIndexBufferObject, GLVertexBufferObject } from "../gl/GLVertexBufferObject";
 import { GLContext } from "../gl/GLContext";
 import { getProgram } from "./Program";
 
@@ -11,17 +11,31 @@ interface RenderOptions {
 }
 
 interface TextureRenderOptions extends RenderOptions {
-    glTextureData: GLTextureData;
+    glTexture: GLTexture;
 }
 
 export function renderTexture2D(glContext: GLContext, options: TextureRenderOptions) {
     const program = getProgram("texture2D", glContext);
-    const { gl } = glContext;
-    const { glVertexBufferObject, glIndexBufferObject, glTextureData } = options;
+    // TODO:
+    // confirm whether it is safe to instantiate gl object in `Layer`
+    const { glVertexBufferObject, glIndexBufferObject, glTexture, mvp } = options;
 
     if (!program) {
         throw new Error(`program texture2D not found.`);
     }
 
-    glContext.activeTexture(0);
+    const activeUnit = 0;
+    glContext.activeTextureUnit(activeUnit);
+    glTexture.bind();
+
+    program.draw(glVertexBufferObject, glIndexBufferObject, {
+        uMVP: {
+            type: "Matrix4fv",
+            value: mvp,
+        },
+        uSampler: {
+            type: "1i",
+            value: activeUnit,
+        },
+    });
 }

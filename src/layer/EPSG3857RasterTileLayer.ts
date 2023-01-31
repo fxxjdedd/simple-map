@@ -2,8 +2,8 @@ import { LayerInit, RasterTileLayer } from "../core/Layer";
 import { FrameState } from "../core/map";
 import { RasterSource } from "../core/source";
 import { RasterTile, TileNum } from "../core/tile";
-import { GLIndexBufferObject, GLVertexBufferObject } from "../gl/GLBufferData";
-import { GLTextureData } from "../gl/GLTextureData";
+import { GLTexture } from "../gl/GLTexture";
+import { GLIndexBufferObject, GLVertexBufferObject } from "../gl/GLVertexBufferObject";
 import { renderTexture2D } from "../render/renderTexture2D";
 
 export interface EPSG3857RasterTileLayerInit extends LayerInit {
@@ -28,12 +28,13 @@ export class EPSG3857RasterTileLayer extends RasterTileLayer {
 
         const glVertexBufferObject = new GLVertexBufferObject(context, tileData!.rasterData);
         const glIndexBufferObject = new GLIndexBufferObject(context, tileData!.indexData);
+        const glTexture = new GLTexture(context, tileData!.imageData);
 
         renderTexture2D(context, {
             mvp: camera.getVPMatrix(),
             glVertexBufferObject,
             glIndexBufferObject,
-            glTextureData: tileData!.textureData,
+            glTexture,
         });
     }
 }

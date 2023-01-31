@@ -22,10 +22,6 @@ export class GLContext {
         this.gl.clear(this.gl.COLOR_BUFFER_BIT | this.gl.DEPTH_BUFFER_BIT);
     }
 
-    activeTexture(n: number) {
-        this.gl.activeTexture(n);
-    }
-
     createBuffer() {
         return this.gl.createBuffer()!;
     }
@@ -44,5 +40,9 @@ export class GLContext {
 
     bufferIndexData(view: TypedArray) {
         this.gl.bufferData(this.gl.ELEMENT_ARRAY_BUFFER, view, this.gl.STATIC_DRAW);
+    }
+
+    activeTextureUnit(n: 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7) {
+        this.gl.activeTexture(this.gl[`TEXTURE${n}`]);
     }
 }

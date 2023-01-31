@@ -1,4 +1,4 @@
-import { getGLType, GLIndexBufferObject, GLVertexBufferObject } from "../gl/GLBufferData";
+import { getGLType, GLIndexBufferObject, GLVertexBufferObject } from "../gl/GLVertexBufferObject";
 import { GLContext } from "../gl/GLContext";
 import { GLUniforms } from "../gl/GLUniforms";
 import { shaders } from "../shaders";

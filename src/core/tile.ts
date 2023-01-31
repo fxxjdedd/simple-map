@@ -1,6 +1,5 @@
 import { vec4 } from "gl-matrix";
 import { IndexStructuredData, RasterStructuredData } from "../data/allStructuredData";
-import { GLTextureData } from "../gl/GLTextureData";
 
 export interface TileNum {
     x: number;
@@ -48,7 +47,7 @@ export abstract class Tile<T> {
 interface RasterTileData {
     rasterData: RasterStructuredData;
     indexData: IndexStructuredData;
-    textureData: GLTextureData;
+    imageData: ImageData;
 }
 
 export class RasterTile extends Tile<RasterTileData> {

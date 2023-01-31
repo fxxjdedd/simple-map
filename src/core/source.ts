@@ -1,6 +1,5 @@
 import { vec4 } from "gl-matrix";
 import { IndexStructuredData, RasterStructuredData } from "../data/allStructuredData";
-import { GLTextureData } from "../gl/GLTextureData";
 import { EPSGUtilSet } from "../util/tile";
 import { replaceURLWithTileNum } from "../util/url";
 import { InferTileContent, RasterTile, Tile, TileCache, TileNum } from "./Tile";
@@ -99,7 +98,6 @@ export class RasterSource extends Source<RasterTile> {
         const url = replaceURLWithTileNum(this.url, tileNum);
         const buffer = await (await fetch(url)).arrayBuffer();
         const imageData = new ImageData(new Uint8ClampedArray(buffer), 256, 256);
-        const textureData = new GLTextureData(imageData);
 
         const rasterData = new RasterStructuredData();
 
@@ -138,7 +136,7 @@ export class RasterSource extends Source<RasterTile> {
         return {
             rasterData,
             indexData,
-            textureData,
+            imageData,
         };
     }
 }
