@@ -60,6 +60,8 @@ export class Program {
         ebo: GLIndexBufferObject,
         uniformValues: Record<string, { type: string; value: any }>
     ) {
+        this.gl.useProgram(this.shaderProgram);
+
         for (const uniformName in uniformValues) {
             this.uniforms.setValue(uniformName, uniformValues[uniformName]);
         }
@@ -69,9 +71,10 @@ export class Program {
         vbo.setVertexAttribPointer(this);
 
         ebo.bind();
+        const trangleCount = ebo.data.getTrangleCount();
         this.gl.drawElements(
             this.gl.TRIANGLES,
-            ebo.data.getTrangleCount(),
+            trangleCount,
             getGLType(this.gl, ebo.data.getTrangleType()),
             0 // keep at 0 until we have segment abstraction
         );
@@ -106,12 +109,3 @@ function loadShader(gl: WebGLRenderingContext, type: GLenum, source: string) {
     }
     return shader;
 }
-
-// segements是对于一个buffer的分段render
-// 一个buffer可以有很多个attributes，分散在这个buffer中
-// 一个segment指定的是，每个attributes各自的一小段
-
-// draw是对一个buffer的render，这个buffer有几个segemnt就render几次
-// 这一个buffer是一个layer的渲染内容。如果有多个layer，就是多次draw。
-
-// layer是对一个buffer的生成和更新，并对buffer根据业务需求进行segment分段

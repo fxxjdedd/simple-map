@@ -115,9 +115,7 @@ export class RasterSource extends Source<RasterTile> {
             0, 0,
             1, 0,
             1, 1,
-            0, 0,
-            1, 1,
-            0, 1
+            0, 1,
         ]
         rasterData.merge({
             a_pos: positions,

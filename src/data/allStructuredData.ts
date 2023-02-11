@@ -17,16 +17,16 @@ export class IndexStructuredData extends StructuredData<typeof indexStructuredDa
     }
 
     getTrangleCount() {
-        const { type, components, stride } = this.accessors.a_index;
+        const { type, components } = this.accessors.a_index;
         const oneLayoutSize = this._getOneOfLayoutSize(type, components);
-        return (this.buffer.byteLength / stride) * oneLayoutSize;
+        return this.buffer.byteLength / oneLayoutSize;
     }
 }
 
 const rasterStructuredDataLayout = StructuredData.createLayout({
     a_pos: {
         type: TypedArrayCode.float32,
-        components: 2,
+        components: 3,
     },
 
     a_uv: {

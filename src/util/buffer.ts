@@ -29,14 +29,14 @@ export function getViewOwnBytes(view: TypedArray) {
 
 // prettier-ignore
 export const TypedArrayCode = {
-    uint8:   0b0001_0001,
-    int8:    0b0010_0001,
-    uint16:  0b0011_0010,
-    int16:   0b0100_0010,
-    uint32:  0b0101_0100,
-    int32:   0b0110_0100,
-    float32: 0b0111_1000,
-    float64: 0b1000_1000,
+    uint8:   0b0001_0001, // code 1 byte 1
+    int8:    0b0010_0001, // code 2 byte 1
+    uint16:  0b0011_0010, // code 3 byte 2
+    int16:   0b0100_0010, // code 4 byte 2
+    uint32:  0b0101_0100, // code 5 byte 4
+    int32:   0b0110_0100, // code 6 byte 4
+    float32: 0b0111_0100, // code 7 byte 4
+    float64: 0b1000_1000, // code 8 byte 8
 }
 
 export function getElementSizeOfCode(code: number) {
@@ -163,7 +163,14 @@ export class StructuredData<TLayout extends BufferLayout> {
             if (m.length % l.components != 0) {
                 throw new Error(`Invalid merges length: ${m.length}.`);
             }
-            layoutCount = m.length / l.components;
+            const count = m.length / l.components;
+            if (layoutCount > 0 && count !== layoutCount) {
+                throw new Error(
+                    `Inconsistent number of vertex attributes: ${count}, previous one: ${layoutCount}`
+                );
+            }
+
+            layoutCount = count;
         }
 
         this.autoResize(len + layoutCount * this.layoutSize);
@@ -178,9 +185,7 @@ export class StructuredData<TLayout extends BufferLayout> {
 
     autoResize(nextLength: number) {
         if (nextLength > this.buffer.byteLength) {
-            const delta = 10; // 10 is enough
-            const targetSize = this.buffer.byteLength + delta * this.layoutSize;
-            const tmp = new Uint8Array(targetSize);
+            const tmp = new Uint8Array(nextLength);
             tmp.set(this.buffer);
             this.buffer = tmp;
         }

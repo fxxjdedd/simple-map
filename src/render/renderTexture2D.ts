@@ -29,11 +29,11 @@ export function renderTexture2D(glContext: GLContext, options: TextureRenderOpti
     glTexture.bind();
 
     program.draw(glVertexBufferObject, glIndexBufferObject, {
-        uMVP: {
+        u_mvp: {
             type: "Matrix4fv",
             value: mvp,
         },
-        uSampler: {
+        u_sampler: {
             type: "1i",
             value: activeUnit,
         },

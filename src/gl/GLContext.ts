@@ -35,11 +35,11 @@ export class GLContext {
     }
 
     bufferVertexData(view: TypedArray) {
-        this.gl.bufferData(this.gl.ARRAY_BUFFER, view, this.gl.STATIC_DRAW);
+        this.gl.bufferData(this.gl.ARRAY_BUFFER, view.buffer, this.gl.STATIC_DRAW);
     }
 
     bufferIndexData(view: TypedArray) {
-        this.gl.bufferData(this.gl.ELEMENT_ARRAY_BUFFER, view, this.gl.STATIC_DRAW);
+        this.gl.bufferData(this.gl.ELEMENT_ARRAY_BUFFER, view.buffer, this.gl.STATIC_DRAW);
     }
 
     activeTextureUnit(n: 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7) {

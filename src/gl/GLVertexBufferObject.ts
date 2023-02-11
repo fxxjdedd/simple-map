@@ -11,11 +11,11 @@ export function getGLType(gl: WebGLRenderingContext, typeCode: number) {
             return gl.BYTE;
         case Uint16Array:
             return gl.UNSIGNED_SHORT;
-        case Int8Array:
+        case Int16Array:
             return gl.SHORT;
         case Uint32Array:
             return gl.UNSIGNED_INT;
-        case Int8Array:
+        case Int32Array:
             return gl.INT;
         case Float32Array:
             return gl.FLOAT;
@@ -48,6 +48,10 @@ export class GLVertexBufferObject {
     }
 
     setVertexAttribPointer(program: Program) {
+        const a = this.glContext.gl.getBufferParameter(
+            this.glContext.gl.ARRAY_BUFFER,
+            this.glContext.gl.BUFFER_SIZE
+        );
         for (const attrName in this.data.accessors) {
             const { type, components, offset, stride } = this.data.accessors[attrName];
             const location = program.attribLocations[attrName];
@@ -56,6 +60,7 @@ export class GLVertexBufferObject {
                     location,
                     components,
                     getGLType(this.glContext.gl, type),
+                    // consider about quntization
                     false,
                     stride,
                     offset
