@@ -31,21 +31,20 @@ export abstract class Source<T extends Tile<unknown>> {
                     })
                     .catch(e => {
                         this.tileCache.delete(tileNum);
-                        console.error(e);
-                        return null;
+                        throw e;
                     });
                 newTile.pendingTask = task;
                 tile = newTile;
             }
 
             if (tile.pendingTask !== undefined) {
-                return (await tile.pendingTask!) as T | null;
+                return (await tile.pendingTask!) as T;
             } else {
                 return tile;
             }
         });
-
         while (loadings.length) {
+            let firstRaced = false;
             const tile = await Promise.race(
                 loadings.map(async loading => {
                     try {
@@ -53,8 +52,11 @@ export abstract class Source<T extends Tile<unknown>> {
                     } catch (e) {
                         throw e;
                     } finally {
-                        const at = loadings.indexOf(loading);
-                        loadings.splice(at, 1);
+                        if (!firstRaced) {
+                            const at = loadings.indexOf(loading);
+                            loadings.splice(at, 1);
+                            firstRaced = true;
+                        }
                     }
                 })
             );
@@ -95,9 +97,8 @@ export class RasterSource extends Source<RasterTile> {
 
     async load(tile: RasterTile) {
         const { tileNum, coordBounds } = tile;
-        console.log(`load tileNum: ${tileNum.z}/${tileNum.x}/${tileNum.y}`);
         const url = replaceURLWithTileNum(this.url, tileNum);
-
+        console.log(`load tileNum: ${tileNum.z}/${tileNum.x}/${tileNum.y}`);
         const image = await loadImage(url);
 
         const rasterData = new RasterStructuredData();
@@ -110,6 +111,7 @@ export class RasterSource extends Source<RasterTile> {
             maxX, maxY, 0, 
             minX, maxY, 0
         ];
+
         // prettier-ignore
         const uv = [
             0, 0,
@@ -125,8 +127,8 @@ export class RasterSource extends Source<RasterTile> {
         const indexData = new IndexStructuredData();
         // prettier-ignore
         const triangles = [
-            0, 1, 2,
-            0, 2, 3
+            0, 1, 3,
+            1, 2, 3
         ]
         indexData.merge({
             a_index: triangles,

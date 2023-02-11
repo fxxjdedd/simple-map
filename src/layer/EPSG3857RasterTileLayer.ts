@@ -1,3 +1,4 @@
+import { mat4, vec3 } from "gl-matrix";
 import { LayerInit, RasterTileLayer } from "../core/Layer";
 import { FrameState } from "../core/map";
 import { RasterSource } from "../core/source";
@@ -24,6 +25,10 @@ export class EPSG3857RasterTileLayer extends RasterTileLayer {
         const { context, camera } = frameState;
         console.log("renderTile", tile);
 
+        // TODO:
+        // 1. renderFrame new Map和addLayer都会触发一次render的问题
+        // 2. google的瓦片服务貌似有网络限制，总是不返回
+        // 3. 这里要改成一次render多个tiles？貌似也没必要，因为每个瓦片都是互相不覆盖的
         const { tileData } = tile;
 
         const glVertexBufferObject = new GLVertexBufferObject(context, tileData!.rasterData);

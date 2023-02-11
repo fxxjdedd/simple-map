@@ -44,13 +44,14 @@ function getBoundsTileNums(bounds: vec4, zoom: number): TileNum[] {
 function getTileCoordBounds(tileNum: TileNum): vec4 {
     const { x, y, z } = tileNum;
 
-    const coordMinX = (Circumference / 2 ** z) * x;
-    const coordMinY = (Circumference / 2 ** z) * y;
+    const coordMinX = (Circumference / 2 ** z) * x - Circumference / 2;
+    const coordMinY = Circumference / 2 - (Circumference / 2 ** z) * y;
 
-    const coordMaxX = (Circumference / 2 ** z) * (x + 1);
-    const coordMaxY = (Circumference / 2 ** z) * (y + 1);
+    const coordMaxX = (Circumference / 2 ** z) * (x + 1) - Circumference / 2;
+    const coordMaxY = Circumference / 2 - (Circumference / 2 ** z) * (y + 1);
 
-    return vec4.fromValues(coordMinX, coordMinY, coordMaxX, coordMaxY);
+    // to sw -> ne
+    return vec4.fromValues(coordMinX, coordMaxY, coordMaxX, coordMinY);
 }
 
 export const EPSGUtilSet: EPSGUtilSet = {

@@ -40,7 +40,7 @@ export class SimpleMap {
 
     constructor(container: string, init?: Partial<SimpleMapInit>) {
         const {
-            center = [116.4, 39.9],
+            center = [0, 0],
             zoom = 1,
             pitch = 0,
             rotation = 0,
@@ -64,7 +64,6 @@ export class SimpleMap {
         });
 
         this.context = new GLContext(container);
-
         this.requestRender();
     }
 
@@ -106,7 +105,7 @@ export class SimpleMap {
 
         this.requestRenderLoop(() => {
             this.renderFrame(frameState);
-        }, 5);
+        }, 1);
     }
 
     private renderFrame(frameState: FrameState) {

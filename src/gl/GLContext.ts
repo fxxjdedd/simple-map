@@ -10,7 +10,10 @@ export class GLContext {
         canvas.width = this.container.clientWidth;
         canvas.height = this.container.clientHeight;
         this.container.appendChild(canvas);
-        this.gl = canvas.getContext("webgl")!;
+        // https://stackoverflow.com/questions/25834400/rendering-multiple-objects-in-webgl
+        this.gl = canvas.getContext("webgl", {
+            preserveDrawingBuffer: true,
+        })!;
         this.gl.viewport(0, 0, canvas.width, canvas.height);
     }
 

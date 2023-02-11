@@ -24,14 +24,18 @@ export class PerspectiveCamera {
     near: number;
     far: number;
     viewSize: vec2;
+    viewSizeWidth!: number;
+    viewSizeHeight!: number;
 
     zoom: number;
     cameraAltitude: number = 0;
     fov: number = (60 * Math.PI) / 180;
+    aspect = 1;
 
     tranform: PerspectiveCameraTransform;
 
     projection: Projection;
+    target!: vec2;
 
     constructor(init: PerspectiveCameraInit) {
         this.projection = init.projection;
@@ -45,47 +49,62 @@ export class PerspectiveCamera {
     }
 
     updateTransform(target: vec2, rotation: number, pitch: number): PerspectiveCameraTransform {
-        const direction = vec3.create();
-        const up = vec3.create();
-        const right = vec3.create();
-        const forward = vec3.create();
-        const position = vec3.fromValues(target[0], target[1], this.cameraAltitude);
+        this.target = target;
+        const worldSpaceTarget = vec3.fromValues(target[0], target[1], 0);
+        const up = vec3.clone(Vector3.up);
+        const right = vec3.clone(Vector3.right);
+        const forward = vec3.clone(Vector3.forward);
+        const position = vec3.fromValues(
+            worldSpaceTarget[0],
+            worldSpaceTarget[1],
+            this.cameraAltitude
+        );
+
+        const viewSpacePosition = vec3.subtract(position, position, worldSpaceTarget);
 
         const matrix = mat4.create();
 
         // 处理 pitch
         mat4.fromRotation(matrix, pitch, Vector3.right);
-        vec3.transformMat4(forward, Vector3.forward, matrix);
-        vec3.transformMat4(up, Vector3.up, matrix);
-        vec3.transformMat4(position, position, matrix);
+        vec3.transformMat4(forward, forward, matrix);
+        vec3.transformMat4(up, up, matrix);
+
+        const viewSpacePitchedPosition = vec3.scale(
+            vec3.create(),
+            forward,
+            vec3.len(viewSpacePosition)
+        );
 
         // 处理 rotation
         mat4.fromRotation(matrix, rotation, forward);
-        vec3.transformMat4(right, Vector3.right, matrix);
+        vec3.transformMat4(up, up, matrix);
+        vec3.transformMat4(right, right, matrix);
 
-        // 得到 direction
-        vec3.cross(direction, up, right);
+        // 反方向即是 direction
+        vec3.scale(forward, forward, -1);
 
         return {
-            direction,
+            direction: forward,
             up,
             right,
-            position,
+            position: viewSpacePitchedPosition,
         };
     }
 
     updateZoom(zoom: number) {
         const resolution = this.projection.getResolution(zoom);
-        const viewHeightMeters = this.viewSize[1] * resolution;
+        this.viewSizeWidth = this.viewSize[0] * resolution;
+        this.viewSizeHeight = this.viewSize[1] * resolution;
 
         // 这里viewHeightMeters值得是地图平面本身，就是处于视锥之间那个大地平面，而不是near;
         // 大地平面就位于z=0的平面上，所以相机与其的距离就是altitude
-        const altitude = viewHeightMeters / (2 * Math.tan(this.fov));
+        const altitude = this.viewSizeHeight / (2 * Math.tan(this.fov));
 
         this.cameraAltitude = altitude;
         this.near = altitude / 10;
         this.far = altitude * 50;
-        this.fov = Math.atan(viewHeightMeters / (2 * this.near));
+        this.fov = Math.atan(this.viewSizeHeight / (2 * this.near));
+        this.aspect = this.viewSizeWidth / this.viewSizeHeight;
 
         return zoom;
     }
@@ -93,34 +112,45 @@ export class PerspectiveCamera {
     getVPMatrix() {
         const { position: P, direction: D, up: U, right: R } = this.tranform;
         // prettier-ignore
-        const translateMatrix = mat4.fromValues(
+        let translateMatrix = mat4.fromValues(
             1, 0, 0, -P[0],
             0, 1, 0, -P[1],
             0, 0, 1, -P[2],
             0, 0, 0, 1,
         );
+        // fromValues是按列输入，但是不方便按照习惯展示，所以我们先倒置写，然后再转过来
+        translateMatrix = mat4.transpose(translateMatrix, translateMatrix);
 
         // prettier-ignore
-        const rotateMatrix = mat4.fromValues(
+        let rotateMatrix = mat4.fromValues(
             R[0], R[1], R[2], 0,
             U[0], U[1], U[2], 0,
             D[0], D[1], D[2], 0, 
             0,    0,    0,    1
         );
+        rotateMatrix = mat4.transpose(rotateMatrix, rotateMatrix);
 
-        const viewMatrix = mat4.multiply(mat4.create(), rotateMatrix, translateMatrix);
+        const viewMatrix = mat4.multiply(mat4.create(), translateMatrix, rotateMatrix);
 
         const { near, far, viewSize } = this;
         const [width, height] = viewSize;
 
         // prettier-ignore
-        const projMatrix = mat4.fromValues(
-            near/width/2, 0, 0, 0,
-            0, near/height/2, 0, 0, 
+        let projMatrix = mat4.fromValues(
+            near/this.viewSizeWidth/2, 0, 0, 0,
+            0, near/this.viewSizeHeight/2, 0, 0,
             0, 0, -(far+near)/(far-near), -2*far*near/(far-near),
             0, 0, -1, 0,
         );
-        return mat4.mul(mat4.create(), viewMatrix, projMatrix);
+        projMatrix = mat4.transpose(projMatrix, projMatrix);
+        const projMatrix2 = mat4.perspective(
+            mat4.create(),
+            this.fov,
+            this.aspect,
+            this.near,
+            this.far
+        );
+        return mat4.mul(mat4.create(), projMatrix2, viewMatrix);
     }
 
     getBounds() {
