@@ -18,7 +18,7 @@ export interface PerspectiveCameraInit {
     projection: Projection;
 }
 
-export const CAMERA_FIXED_ALTITUDE = 1000; // z 1000 暂定
+export const CAMERA_FIXED_ALTITUDE = 1000;
 
 export class PerspectiveCamera {
     near: number;
@@ -61,7 +61,7 @@ export class PerspectiveCamera {
 
         const matrix = mat4.create();
 
-        // 处理 pitch
+        // Handling pitch
         mat4.fromRotation(matrix, pitch, Vector3.right);
         vec3.transformMat4(forward, forward, matrix);
         vec3.transformMat4(up, up, matrix);
@@ -72,12 +72,12 @@ export class PerspectiveCamera {
             vec3.len(viewSpacePosition)
         );
 
-        // 处理 rotation
+        // Handling rotation
         mat4.fromRotation(matrix, rotation, forward);
         vec3.transformMat4(up, up, matrix);
         vec3.transformMat4(right, right, matrix);
 
-        // 反方向即是 direction
+        // The opposite of forward is direction
         vec3.scale(forward, forward, -1);
 
         return {
@@ -93,14 +93,14 @@ export class PerspectiveCamera {
         this.viewSizeWidth = this.viewSize[0] * resolution;
         this.viewSizeHeight = this.viewSize[1] * resolution;
 
-        // 这里viewHeightMeters值得是地图平面本身，就是处于视锥之间那个大地平面，而不是near;
-        // 大地平面就位于z=0的平面上，所以相机与其的距离就是altitude
-        const altitude = this.viewSizeHeight / (2 * Math.tan(this.fov));
+        // Imagine if viewSize refers to the NEAR plane, and if there is a building on the earth, wouldn't that building be outside the frustum?
+        // So, here viewSize refers to the width and height of the map plane itself, which is the earth plane between the view cones, not the near plane;
+        const altitude = this.viewSizeHeight / (2 * Math.tan(this.fov / 2)); // Note that here is fov/2
 
         this.cameraAltitude = altitude;
         this.near = altitude / 10;
         this.far = altitude * 50;
-        this.fov = Math.atan(this.viewSizeHeight / (2 * this.near)) * 2;
+        this.fov = Math.atan(this.viewSizeHeight / (2 * this.near)) * 2; // Don't forget that fov is twice  θ
 
         return zoom;
     }
@@ -114,7 +114,7 @@ export class PerspectiveCamera {
             0, 0, 1, -P[2],
             0, 0, 0, 1,
         );
-        // fromValues是按列输入，但是不方便按照习惯展示，所以我们先倒置写，然后再转过来
+        // fromValues is entered by column, but it's not convenient to display it by convention, so we write it upside down first and then turn it around
         translateMatrix = mat4.transpose(translateMatrix, translateMatrix);
 
         // prettier-ignore

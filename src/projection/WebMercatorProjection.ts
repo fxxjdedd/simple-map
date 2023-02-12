@@ -20,7 +20,7 @@ export class WebMercatorProjection implements Projection {
     }
 
     getResolution(zoom: number) {
-        // 暂未考虑lat变化
+        // No lat changes considered for now
         return Circumference / 2 ** zoom / 256;
     }
 }
