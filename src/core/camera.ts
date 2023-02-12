@@ -30,7 +30,6 @@ export class PerspectiveCamera {
     zoom: number;
     cameraAltitude: number = 0;
     fov: number = (60 * Math.PI) / 180;
-    aspect = 1;
 
     tranform: PerspectiveCameraTransform;
 
@@ -44,12 +43,10 @@ export class PerspectiveCamera {
         this.far = CAMERA_FIXED_ALTITUDE;
         this.viewSize = init.viewSize;
         this.zoom = this.updateZoom(init.zoom);
-
         this.tranform = this.updateTransform(init.target, init.rotation, init.pitch);
     }
 
     updateTransform(target: vec2, rotation: number, pitch: number): PerspectiveCameraTransform {
-        this.target = target;
         const worldSpaceTarget = vec3.fromValues(target[0], target[1], 0);
         const up = vec3.clone(Vector3.up);
         const right = vec3.clone(Vector3.right);
@@ -103,8 +100,7 @@ export class PerspectiveCamera {
         this.cameraAltitude = altitude;
         this.near = altitude / 10;
         this.far = altitude * 50;
-        this.fov = Math.atan(this.viewSizeHeight / (2 * this.near));
-        this.aspect = this.viewSizeWidth / this.viewSizeHeight;
+        this.fov = Math.atan(this.viewSizeHeight / (2 * this.near)) * 2;
 
         return zoom;
     }
@@ -132,25 +128,21 @@ export class PerspectiveCamera {
 
         const viewMatrix = mat4.multiply(mat4.create(), translateMatrix, rotateMatrix);
 
-        const { near, far, viewSize } = this;
-        const [width, height] = viewSize;
+        const { near, far, viewSizeWidth, viewSizeHeight } = this;
 
+        const m00 = near / (viewSizeWidth / 2);
+        const m11 = near / (viewSizeHeight / 2);
+        const m22 = -(far + near) / (far - near);
+        const m23 = (-2 * far * near) / (far - near);
         // prettier-ignore
         let projMatrix = mat4.fromValues(
-            near/this.viewSizeWidth/2, 0, 0, 0,
-            0, near/this.viewSizeHeight/2, 0, 0,
-            0, 0, -(far+near)/(far-near), -2*far*near/(far-near),
-            0, 0, -1, 0,
+            m00, 0,   0,   0,
+            0,   m11, 0,   0,
+            0,   0,   m22, m23,
+            0,   0,   -1,  0,
         );
         projMatrix = mat4.transpose(projMatrix, projMatrix);
-        const projMatrix2 = mat4.perspective(
-            mat4.create(),
-            this.fov,
-            this.aspect,
-            this.near,
-            this.far
-        );
-        return mat4.mul(mat4.create(), projMatrix2, viewMatrix);
+        return mat4.mul(mat4.create(), projMatrix, viewMatrix);
     }
 
     getBounds() {

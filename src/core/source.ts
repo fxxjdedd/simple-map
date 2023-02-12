@@ -3,7 +3,7 @@ import { IndexStructuredData, RasterStructuredData } from "../data/allStructured
 import { loadImage } from "../util/image";
 import { EPSGUtilSet } from "../util/tile";
 import { replaceURLWithTileNum } from "../util/url";
-import { InferTileContent, RasterTile, Tile, TileCache, TileNum } from "./Tile";
+import { InferTileContent, RasterTile, Tile, TileCache, TileNum } from "./tile";
 
 export abstract class Source<T extends Tile<unknown>> {
     tileCache: TileCache<T>;

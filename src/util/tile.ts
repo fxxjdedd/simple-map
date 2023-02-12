@@ -1,5 +1,5 @@
 import { vec2, vec4 } from "gl-matrix";
-import { TileNum } from "../core/Tile";
+import { TileNum } from "../core/tile";
 import { Circumference } from "../projection/Constants";
 import { Projection } from "../projection/Projection";
 import { WebMercatorProjection } from "../projection/WebMercatorProjection";
