@@ -5,21 +5,19 @@ attribute vec2 a_uv;
 uniform mat4 u_mvp;
 
 varying highp vec2 vTextureCoord;
-varying highp vec4 vPos;
+
 void main(void) {
   gl_Position = u_mvp * a_pos;
-  vPos = a_pos;
+  vTextureCoord = a_uv;
 }
 `;
 export const fragment = `
 varying highp vec2 vTextureCoord;
-varying highp vec4 vPos;
 
 uniform sampler2D u_sampler;
 
 void main(void) {
-  // gl_FragColor = texture2D(u_sampler, vTextureCoord);
-  gl_FragColor = vec4(vPos.x, vPos.y, vPos.z, 1);
+  gl_FragColor = texture2D(u_sampler, vTextureCoord);
 }
 `;
 

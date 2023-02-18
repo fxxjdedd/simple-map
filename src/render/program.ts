@@ -6,37 +6,36 @@ import { shaders } from "../shaders";
 const programCache: Record<string, Program> = {};
 
 export function getProgram(name: string, glContext: GLContext) {
-    if (programCache[name]) {
-        return programCache[name];
-    }
+    if (!programCache[name]) {
+        if (name in shaders) {
+            const { vertex, fragment, attributes, uniforms } = shaders[name];
+            const shaderProgram = initShaderProgram(glContext.gl, vertex, fragment);
 
-    if (name in shaders) {
-        const { vertex, fragment, attributes, uniforms } = shaders[name];
-        const shaderProgram = initShaderProgram(glContext.gl, vertex, fragment);
+            const attribLocations: Record<string, number> = {};
+            for (const attrName of attributes) {
+                // TODO: gl.bindAttribLocation can make attrib layout stable.
+                attribLocations[attrName] = glContext.gl.getAttribLocation(shaderProgram, attrName);
+            }
 
-        const attribLocations: Record<string, number> = {};
-        for (const attrName of attributes) {
-            // TODO: gl.bindAttribLocation can make attrib layout stable.
-            attribLocations[attrName] = glContext.gl.getAttribLocation(shaderProgram, attrName);
-        }
+            const uniformLocations: Record<string, WebGLUniformLocation> = {};
+            for (const uniformName of uniforms) {
+                uniformLocations[uniformName] = glContext.gl.getUniformLocation(
+                    shaderProgram,
+                    uniformName
+                )!;
+            }
 
-        const uniformLocations: Record<string, WebGLUniformLocation> = {};
-        for (const uniformName of uniforms) {
-            uniformLocations[uniformName] = glContext.gl.getUniformLocation(
+            programCache[name] = new Program(
+                glContext,
                 shaderProgram,
-                uniformName
-            )!;
+                attribLocations,
+                uniformLocations
+            );
         }
-
-        programCache[name] = new Program(
-            glContext,
-            shaderProgram,
-            attribLocations,
-            uniformLocations
-        );
-        return programCache[name];
     }
-    return null;
+
+    glContext.gl.useProgram(programCache[name].shaderProgram);
+    return programCache[name];
 }
 
 export class Program {
@@ -60,8 +59,6 @@ export class Program {
         ebo: GLIndexBufferObject,
         uniformValues: Record<string, { type: string; value: any }>
     ) {
-        this.gl.useProgram(this.shaderProgram);
-
         for (const uniformName in uniformValues) {
             this.uniforms.setValue(uniformName, uniformValues[uniformName]);
         }
