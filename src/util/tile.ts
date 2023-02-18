@@ -17,16 +17,17 @@ export interface EPSGUtilSet {
 const webMercatorProjection = new WebMercatorProjection();
 
 function getBoundsTileNums(bounds: vec4, zoom: number): TileNum[] {
+    const optimalZoom = Math.floor(zoom);
     const [minLng, minLat, maxLng, maxLat] = bounds;
 
     const [minX, minY] = webMercatorProjection.project(vec2.fromValues(minLng, minLat));
     const [maxX, maxY] = webMercatorProjection.project(vec2.fromValues(maxLng, maxLat));
 
     // x,y start from 0°, not -180°, so here add half Circumference
-    const minTileX = Math.floor((minX + Circumference / 2) / (Circumference / 2 ** zoom));
-    const minTileY = Math.floor((minY + Circumference / 2) / (Circumference / 2 ** zoom));
-    const maxTileX = Math.floor((maxX + Circumference / 2) / (Circumference / 2 ** zoom));
-    const maxTileY = Math.floor((maxY + Circumference / 2) / (Circumference / 2 ** zoom));
+    const minTileX = Math.floor((minX + Circumference / 2) / (Circumference / 2 ** optimalZoom));
+    const minTileY = Math.floor((minY + Circumference / 2) / (Circumference / 2 ** optimalZoom));
+    const maxTileX = Math.floor((maxX + Circumference / 2) / (Circumference / 2 ** optimalZoom));
+    const maxTileY = Math.floor((maxY + Circumference / 2) / (Circumference / 2 ** optimalZoom));
 
     const tileNums: TileNum[] = [];
     for (let i = minTileX; i <= maxTileX; i++) {
@@ -34,7 +35,7 @@ function getBoundsTileNums(bounds: vec4, zoom: number): TileNum[] {
             tileNums.push({
                 x: i,
                 y: j,
-                z: zoom,
+                z: optimalZoom,
             });
         }
     }

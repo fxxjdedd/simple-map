@@ -18,8 +18,6 @@ export interface PerspectiveCameraInit {
     projection: Projection;
 }
 
-export const CAMERA_FIXED_ALTITUDE = 1000;
-
 export class PerspectiveCamera {
     near: number;
     far: number;
@@ -40,7 +38,7 @@ export class PerspectiveCamera {
         this.projection = init.projection;
 
         this.near = 0.01;
-        this.far = CAMERA_FIXED_ALTITUDE;
+        this.far = 1000;
         this.viewSize = init.viewSize;
         this.zoom = this.updateZoom(init.zoom);
         this.tranform = this.updateTransform(init.target, init.rotation, init.pitch);
@@ -80,12 +78,14 @@ export class PerspectiveCamera {
         // The opposite of forward is direction
         vec3.scale(forward, forward, -1);
 
-        return {
+        this.tranform = {
             direction: forward,
             up,
             right,
             position: viewSpacePitchedPosition,
         };
+
+        return this.tranform;
     }
 
     updateZoom(zoom: number) {
@@ -93,14 +93,11 @@ export class PerspectiveCamera {
         this.viewSizeWidth = this.viewSize[0] * resolution;
         this.viewSizeHeight = this.viewSize[1] * resolution;
 
-        // Imagine if viewSize refers to the NEAR plane, and if there is a building on the earth, wouldn't that building be outside the frustum?
-        // So, here viewSize refers to the width and height of the map plane itself, which is the earth plane between the view cones, not the near plane;
         const altitude = this.viewSizeHeight / (2 * Math.tan(this.fov / 2)); // Note that here is fov/2
 
         this.cameraAltitude = altitude;
         this.near = altitude / 10;
         this.far = altitude * 50;
-        this.fov = Math.atan(this.viewSizeHeight / (2 * this.near)) * 2; // Don't forget that fov is twice  θ
 
         return zoom;
     }

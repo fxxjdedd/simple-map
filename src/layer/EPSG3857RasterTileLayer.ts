@@ -23,7 +23,6 @@ export class EPSG3857RasterTileLayer extends RasterTileLayer {
 
     renderTile(frameState: FrameState, tile: RasterTile) {
         const { context, camera } = frameState;
-        console.log("renderTile", tile);
 
         const { tileData } = tile;
 

@@ -5,6 +5,7 @@ import { Layer } from "./layer";
 import { GLContext } from "../gl/GLContext";
 import { Projection } from "../projection/Projection";
 import { EPSGUtilSet } from "../util/tile";
+import { DefaultEventImplSet, MapEvents } from "./events";
 
 export interface FrameState {
     camera: PerspectiveCamera;
@@ -21,22 +22,20 @@ export interface SimpleMapInit {
 }
 
 export class SimpleMap {
+    public center: vec2;
+    public centerCoord: vec2;
+    public zoom: number;
+    public pitch: number;
+    public rotation: number;
+
+    public projection: Projection;
+    public camera: PerspectiveCamera;
+    public layers: Set<Layer> = new Set();
+    public context: GLContext;
+    public events: MapEvents;
+
     private restFrameCount = 0;
     private runningRenderLoopID: number = 0;
-
-    private center: vec2;
-    private centerCoord: vec2;
-    private zoom: number;
-    private pitch: number;
-    private rotation: number;
-
-    private projection: Projection;
-
-    private camera: PerspectiveCamera;
-
-    private layers: Set<Layer> = new Set();
-
-    private context: GLContext;
 
     constructor(container: string, init?: Partial<SimpleMapInit>) {
         const {
@@ -64,6 +63,9 @@ export class SimpleMap {
         });
 
         this.context = new GLContext(container);
+
+        this.events = new MapEvents(this, DefaultEventImplSet);
+        this.events.bindAll();
         this.requestRender();
     }
 
@@ -88,6 +90,7 @@ export class SimpleMap {
     setZoom(zoom: number) {
         this.zoom = zoom;
         this.camera.updateZoom(zoom);
+        this.camera.updateTransform(this.centerCoord, this.rotation, this.pitch);
         this.requestRender();
     }
 
@@ -106,6 +109,10 @@ export class SimpleMap {
         this.requestRenderLoop(() => {
             this.renderFrame(frameState);
         }, 1);
+    }
+
+    destroy() {
+        this.events.unbindAll();
     }
 
     private renderFrame(frameState: FrameState) {
