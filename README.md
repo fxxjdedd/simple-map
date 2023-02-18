@@ -2,4 +2,8 @@
 
 build a simple map from scratch, using basic WebGL and GIS knowleage.
 
-[architecture design](architecture.md)
+## Design
+[architecture design](./architecture.md)
+
+## Progress
+[progress-overview](./progress-overview.md)
