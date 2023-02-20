@@ -22,8 +22,8 @@ export class PerspectiveCamera {
     near: number;
     far: number;
     viewSize: vec2;
-    viewSizeWidth!: number;
-    viewSizeHeight!: number;
+    nearPlaneWidth!: number;
+    nearPlaneHeight!: number;
 
     zoom: number;
     cameraAltitude: number = 0;
@@ -90,14 +90,19 @@ export class PerspectiveCamera {
 
     updateZoom(zoom: number) {
         const resolution = this.projection.getResolution(zoom);
-        this.viewSizeWidth = this.viewSize[0] * resolution;
-        this.viewSizeHeight = this.viewSize[1] * resolution;
+        const viewSizeWidth = this.viewSize[0] * resolution;
+        const viewSizeHeight = this.viewSize[1] * resolution;
 
-        const altitude = this.viewSizeHeight / (2 * Math.tan(this.fov / 2)); // Note that here is fov/2
+        const altitude = viewSizeHeight / (2 * Math.tan(this.fov / 2)); // Note that here is fov/2
+
+        const factor = 1 / 10;
 
         this.cameraAltitude = altitude;
-        this.near = altitude / 10;
+        this.near = altitude * factor;
         this.far = altitude * 50;
+
+        this.nearPlaneWidth = viewSizeWidth * factor;
+        this.nearPlaneHeight = viewSizeHeight * factor;
 
         return zoom;
     }
@@ -125,10 +130,10 @@ export class PerspectiveCamera {
 
         const viewMatrix = mat4.multiply(mat4.create(), translateMatrix, rotateMatrix);
 
-        const { near, far, viewSizeWidth, viewSizeHeight } = this;
+        let { near, far, nearPlaneWidth, nearPlaneHeight } = this;
 
-        const m00 = near / (viewSizeWidth / 2);
-        const m11 = near / (viewSizeHeight / 2);
+        const m00 = near / (nearPlaneWidth / 2);
+        const m11 = near / (nearPlaneHeight / 2);
         const m22 = -(far + near) / (far - near);
         const m23 = (-2 * far * near) / (far - near);
         // prettier-ignore
