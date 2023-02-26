@@ -20,22 +20,30 @@ function getBoundsTileNums(bounds: vec4, zoom: number): TileNum[] {
     const optimalZoom = Math.floor(zoom);
     const [minLng, minLat, maxLng, maxLat] = bounds;
 
-    const [minX, minY] = webMercatorProjection.project(vec2.fromValues(minLng, minLat));
-    const [maxX, maxY] = webMercatorProjection.project(vec2.fromValues(maxLng, maxLat));
+    let [minX, minY] = webMercatorProjection.project(vec2.fromValues(minLng, minLat));
+    let [maxX, maxY] = webMercatorProjection.project(vec2.fromValues(maxLng, maxLat));
 
-    // x,y start from 0°, not -180°, so here add half Circumference
-    const minTileX = Math.floor((minX + Circumference / 2) / (Circumference / 2 ** optimalZoom));
-    const minTileY = Math.floor((minY + Circumference / 2) / (Circumference / 2 ** optimalZoom));
-    const maxTileX = Math.floor((maxX + Circumference / 2) / (Circumference / 2 ** optimalZoom));
-    const maxTileY = Math.floor((maxY + Circumference / 2) / (Circumference / 2 ** optimalZoom));
+    // clamp Y to Circumference / 2, cause we only need repeat tile in x-direction.
+    // minus/plus 1 is useful to guard load only 1 tile when zoom = 0.
+    minY = Math.max(Math.min(minY, Circumference / 2 - 1), -Circumference / 2 + 1);
+    maxY = Math.max(Math.min(maxY, Circumference / 2 - 1), -Circumference / 2 + 1);
+
+    // x,y start from 0°, not -180°, so here + half Circumference
+    let minTileX = Math.floor((minX + Circumference / 2) / (Circumference / 2 ** optimalZoom));
+    let minTileY = Math.floor((Circumference / 2 - maxY) / (Circumference / 2 ** optimalZoom));
+    let maxTileX = Math.floor((maxX + Circumference / 2) / (Circumference / 2 ** optimalZoom));
+    let maxTileY = Math.floor((Circumference / 2 - minY) / (Circumference / 2 ** optimalZoom));
 
     const tileNums: TileNum[] = [];
     for (let i = minTileX; i <= maxTileX; i++) {
         for (let j = minTileY; j <= maxTileY; j++) {
+            const totalNums = 2 ** zoom;
+
             tileNums.push({
-                x: i,
-                y: j,
+                x: Math.abs(i % totalNums),
+                y: j, // j is safe
                 z: optimalZoom,
+                offset: Math.floor(i / totalNums),
             });
         }
     }

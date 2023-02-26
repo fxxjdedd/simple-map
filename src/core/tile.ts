@@ -5,6 +5,7 @@ export interface TileNum {
     x: number;
     y: number;
     z: number;
+    offset: number; // tell shader how to locate repeatde tile
 }
 
 export class TileCache<T extends Tile<any>> {

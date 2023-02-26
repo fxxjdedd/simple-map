@@ -14,11 +14,12 @@ export class GLContext {
         this.gl = canvas.getContext("webgl", {
             preserveDrawingBuffer: true,
         })!;
+
         this.gl.viewport(0, 0, canvas.width, canvas.height);
     }
 
     clear() {
-        this.gl.clearColor(1, 1, 1, 1);
+        this.gl.clearColor(0, 1, 1, 1);
         this.gl.clearDepth(1);
         this.gl.enable(this.gl.DEPTH_TEST);
         this.gl.depthFunc(this.gl.LEQUAL);

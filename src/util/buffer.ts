@@ -238,6 +238,10 @@ export class StructuredData<TLayout extends BufferLayout> {
         return elemSize * components;
     }
 
+    static mergeFrom(datas: StructuredData<any>[]) {
+
+    }
+
     static createLayout<TLayout extends BufferLayout>(layout: TLayout) {
         return layout;
     }

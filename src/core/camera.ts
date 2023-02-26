@@ -1,4 +1,4 @@
-import { mat4, quat, vec2, vec3, vec4 } from "gl-matrix";
+import { mat2, mat4, quat, vec2, vec3, vec4 } from "gl-matrix";
 import { Projection } from "../projection/Projection";
 import { Vector3 } from "../util/matrix";
 
@@ -29,7 +29,7 @@ export class PerspectiveCamera {
     cameraAltitude: number = 0;
     fov: number = (60 * Math.PI) / 180;
 
-    tranform: PerspectiveCameraTransform;
+    transform: PerspectiveCameraTransform;
 
     projection: Projection;
     target!: vec2;
@@ -41,21 +41,13 @@ export class PerspectiveCamera {
         this.far = 1000;
         this.viewSize = init.viewSize;
         this.zoom = this.updateZoom(init.zoom);
-        this.tranform = this.updateTransform(init.target, init.rotation, init.pitch);
+        this.transform = this.updateTransform(init.target, init.rotation, init.pitch);
     }
 
     updateTransform(target: vec2, rotation: number, pitch: number): PerspectiveCameraTransform {
-        const worldSpaceTarget = vec3.fromValues(target[0], target[1], 0);
         const up = vec3.clone(Vector3.up);
         const right = vec3.clone(Vector3.right);
         const forward = vec3.clone(Vector3.forward);
-        const position = vec3.fromValues(
-            worldSpaceTarget[0],
-            worldSpaceTarget[1],
-            this.cameraAltitude
-        );
-
-        const viewSpacePosition = vec3.subtract(position, position, worldSpaceTarget);
 
         const matrix = mat4.create();
 
@@ -64,11 +56,9 @@ export class PerspectiveCamera {
         vec3.transformMat4(forward, forward, matrix);
         vec3.transformMat4(up, up, matrix);
 
-        const viewSpacePitchedPosition = vec3.scale(
-            vec3.create(),
-            forward,
-            vec3.len(viewSpacePosition)
-        );
+        let pitchedPosition = vec3.scale(vec3.create(), forward, this.cameraAltitude);
+        // pitchedPosition[0] += 100000;
+        // pitchedPosition[1] += 100000;
 
         // Handling rotation
         mat4.fromRotation(matrix, rotation, forward);
@@ -76,16 +66,16 @@ export class PerspectiveCamera {
         vec3.transformMat4(right, right, matrix);
 
         // The opposite of forward is direction
-        vec3.scale(forward, forward, -1);
+        const direction = vec3.scale(vec3.create(), forward, -1);
 
-        this.tranform = {
-            direction: forward,
+        this.transform = {
+            direction,
             up,
             right,
-            position: viewSpacePitchedPosition,
+            position: pitchedPosition,
         };
 
-        return this.tranform;
+        return this.transform;
     }
 
     updateZoom(zoom: number) {
@@ -108,7 +98,7 @@ export class PerspectiveCamera {
     }
 
     getVPMatrix() {
-        const { position: P, direction: D, up: U, right: R } = this.tranform;
+        const { position: P, direction: D, up: U, right: R } = this.transform;
         // prettier-ignore
         let translateMatrix = mat4.fromValues(
             1, 0, 0, -P[0],
@@ -148,27 +138,120 @@ export class PerspectiveCamera {
     }
 
     getBounds() {
-        const nearPlaneLB = vec3.fromValues(-1, -1, this.near);
-        const nearPlaneRT = vec3.fromValues(1, 1, this.near);
-
-        const farPlaneLB = vec3.fromValues(-1, -1, this.far);
-        const farPlaneRT = vec3.fromValues(1, 1, this.far);
+        // ndc positions (right-handed)
+        const frustumNDCPositions = [
+            // near
+            vec4.fromValues(1, -1, -1, 1),
+            vec4.fromValues(-1, -1, -1, 1),
+            vec4.fromValues(-1, 1, -1, 1),
+            vec4.fromValues(1, 1, -1, 1),
+            // far
+            vec4.fromValues(1, -1, 1, 1),
+            vec4.fromValues(-1, -1, 1, 1),
+            vec4.fromValues(-1, 1, 1, 1),
+            vec4.fromValues(1, 1, 1, 1),
+        ];
 
         const backToWorldMatrix = mat4.invert(mat4.create(), this.getVPMatrix());
 
-        vec3.transformMat4(nearPlaneLB, nearPlaneLB, backToWorldMatrix);
-        vec3.transformMat4(nearPlaneRT, nearPlaneRT, backToWorldMatrix);
-        vec3.transformMat4(farPlaneLB, farPlaneLB, backToWorldMatrix);
-        vec3.transformMat4(farPlaneRT, farPlaneRT, backToWorldMatrix);
+        // world positions
+        const frustumWorldPositions: vec3[] = [];
+        for (const ndcPos of frustumNDCPositions) {
+            const worldPos = vec4.transformMat4(vec4.create(), ndcPos, backToWorldMatrix);
+            vec4.scale(worldPos, worldPos, 1 / worldPos[3]); // w-divide
+            frustumWorldPositions.push(vec3.fromValues(worldPos[0], worldPos[1], worldPos[2]));
+        }
 
-        const minX = Math.min(nearPlaneLB[0], nearPlaneRT[0], farPlaneLB[0], farPlaneRT[0]);
-        const minY = Math.min(nearPlaneLB[1], nearPlaneRT[1], farPlaneLB[1], farPlaneRT[1]);
-        const maxX = Math.max(nearPlaneLB[0], nearPlaneRT[0], farPlaneLB[0], farPlaneRT[0]);
-        const maxY = Math.max(nearPlaneLB[1], nearPlaneRT[1], farPlaneLB[1], farPlaneRT[1]);
+        const frustumPlaneTriangles = [
+            [frustumWorldPositions[7], frustumWorldPositions[3], frustumWorldPositions[0]], // left (2,3) x (2,0)
+            [frustumWorldPositions[1], frustumWorldPositions[2], frustumWorldPositions[6]], // right
+            [frustumWorldPositions[2], frustumWorldPositions[3], frustumWorldPositions[7]], // top
+            [frustumWorldPositions[4], frustumWorldPositions[0], frustumWorldPositions[1]], // bottom
+            [frustumWorldPositions[7], frustumWorldPositions[4], frustumWorldPositions[5]], // far
+        ];
+
+        const frustumPlaneNormals = frustumPlaneTriangles
+            .map(([p1, p2, p3]) => [
+                vec3.subtract(vec3.create(), p1, p2),
+                vec3.subtract(vec3.create(), p3, p2),
+            ])
+            .map(([v1, v2]) => {
+                const normal = vec3.create();
+                vec3.cross(normal, v1, v2);
+                vec3.normalize(normal, normal);
+                return normal;
+            });
+
+        const frustumPlanes = frustumPlaneNormals.map((normal, index) => {
+            // plane: Ax + By + Cz + D = 0;
+            // prettier-ignore
+            const A = normal[0], B = normal[1], C = normal[2];
+            const pointOnPlane = frustumPlaneTriangles[index][0];
+            const D = -vec3.dot(normal, pointOnPlane);
+            return vec4.fromValues(A, B, C, D);
+        });
+
+        const frustumIntersectLines = frustumPlanes.map(plane => {
+            const [A, B, C, D] = plane;
+            // map plane's z is 0, so C is discarded
+            // line: Ax + By + D = 0;
+            return vec3.fromValues(A, B, D);
+        });
+
+        const intersectPoints = frustumIntersectLines.map(line => {
+            return this.intersectPoints(line, frustumIntersectLines);
+        });
+
+        // prettier-ignore
+        let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+
+        for (const points of intersectPoints) {
+            for (const point of points) {
+                minX = Math.min(minX, point[0]);
+                minY = Math.min(minY, point[1]);
+                maxX = Math.max(maxX, point[0]);
+                maxY = Math.max(maxY, point[1]);
+            }
+        }
 
         const minLnglat = this.projection.unproject(vec2.fromValues(minX, minY));
         const maxLnglat = this.projection.unproject(vec2.fromValues(maxX, maxY));
 
-        return vec4.fromValues(minLnglat[0], minLnglat[1], maxLnglat[0], maxLnglat[0]);
+        return vec4.fromValues(minLnglat[0], minLnglat[1], maxLnglat[0], maxLnglat[1]);
+    }
+
+    private intersectPoints(line: vec3, intersectLines: vec3[]) {
+        const points: vec2[] = [];
+
+        for (const intersectLine of intersectLines) {
+            // same line
+            if (vec3.equals(line, intersectLine)) {
+                continue;
+            }
+
+            // Ax + By + D = 0;
+            // M·(x,y) = -D
+            // (x,y) = invM·-D
+
+            // prettier-ignore
+            const M = mat2.fromValues(
+                line[0], line[1],
+                intersectLine[0], intersectLine[1]
+            );
+            mat2.transpose(M, M);
+
+            // two parallel lines
+            if (mat2.determinant(M) == 0) {
+                continue;
+            }
+            mat2.invert(M, M);
+
+            const D = vec2.fromValues(line[2], intersectLine[2]);
+            vec2.scale(D, D, -1);
+
+            const xy = vec2.transformMat2(vec2.create(), D, M);
+            points.push(xy);
+        }
+        return points;
     }
 }
