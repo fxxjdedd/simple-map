@@ -71,6 +71,11 @@ export class SimpleMap {
 
     setCenter(center: vec2) {
         this.centerCoord = this.projection.project(center);
+        this.setCenterCoord(this.centerCoord);
+    }
+
+    setCenterCoord(centerCoord: vec2) {
+        this.centerCoord = centerCoord;
         this.camera.updateTransform(this.centerCoord, this.rotation, this.pitch);
         this.requestRender();
     }
@@ -92,6 +97,10 @@ export class SimpleMap {
         this.camera.updateZoom(zoom);
         this.camera.updateTransform(this.centerCoord, this.rotation, this.pitch);
         this.requestRender();
+    }
+
+    getResolution() {
+        return this.projection.getResolution(this.zoom);
     }
 
     addLayer(layer: Layer) {
