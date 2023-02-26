@@ -25,19 +25,21 @@ function getBoundsTileNums(bounds: vec4, zoom: number): TileNum[] {
 
     // clamp Y to Circumference / 2, cause we only need repeat tile in x-direction.
     // minus/plus 1 is useful to guard load only 1 tile when zoom = 0.
-    minY = Math.max(Math.min(minY, Circumference / 2 - 1), -Circumference / 2 + 1);
-    maxY = Math.max(Math.min(maxY, Circumference / 2 - 1), -Circumference / 2 + 1);
+    minY = Math.max(Math.min(minY, Circumference / 2), -Circumference / 2);
+    maxY = Math.max(Math.min(maxY, Circumference / 2), -Circumference / 2);
 
     // x,y start from 0°, not -180°, so here + half Circumference
-    let minTileX = Math.floor((minX + Circumference / 2) / (Circumference / 2 ** optimalZoom));
-    let minTileY = Math.floor((Circumference / 2 - maxY) / (Circumference / 2 ** optimalZoom));
-    let maxTileX = Math.floor((maxX + Circumference / 2) / (Circumference / 2 ** optimalZoom));
-    let maxTileY = Math.floor((Circumference / 2 - minY) / (Circumference / 2 ** optimalZoom));
+    let minTileX = (minX + Circumference / 2) / (Circumference / 2 ** optimalZoom);
+    let minTileY = (Circumference / 2 - maxY) / (Circumference / 2 ** optimalZoom);
+    let maxTileX = (maxX + Circumference / 2) / (Circumference / 2 ** optimalZoom);
+    let maxTileY = (Circumference / 2 - minY) / (Circumference / 2 ** optimalZoom);
 
     const tileNums: TileNum[] = [];
-    for (let i = minTileX; i <= maxTileX; i++) {
-        for (let j = minTileY; j <= maxTileY; j++) {
-            const totalNums = 2 ** zoom;
+    for (let i = minTileX; i < maxTileX; i++) {
+        i = Math.floor(i);
+        for (let j = minTileY; j < maxTileY; j++) {
+            j = Math.floor(j);
+            const totalNums = 2 ** Math.floor(zoom);
 
             tileNums.push({
                 x: Math.abs(i % totalNums),
