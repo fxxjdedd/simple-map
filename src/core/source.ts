@@ -26,6 +26,8 @@ export abstract class Source<T extends Tile<unknown>> {
                     .then(tileData => {
                         newTile.tileData = tileData;
                         newTile.pendingTask = undefined;
+                        // dont know why this line is nessary? if comment, tile wont have the `freshTile` field.
+                        newTile.freshTile = true;
                         this.tileCache.set(tileNum, newTile);
                         return newTile;
                     })
@@ -35,6 +37,8 @@ export abstract class Source<T extends Tile<unknown>> {
                     });
                 newTile.pendingTask = task;
                 tile = newTile;
+            } else {
+                tile.freshTile = false;
             }
 
             if (tile.pendingTask !== undefined) {

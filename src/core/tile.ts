@@ -40,6 +40,8 @@ export abstract class Tile<T> {
 
     pendingTask?: Promise<Tile<T> | null>;
 
+    freshTile: boolean = false;
+
     constructor(tileNum: TileNum) {
         this.tileNum = tileNum;
     }
