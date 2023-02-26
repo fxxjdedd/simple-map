@@ -57,8 +57,8 @@ export class PerspectiveCamera {
         vec3.transformMat4(up, up, matrix);
 
         let pitchedPosition = vec3.scale(vec3.create(), forward, this.cameraAltitude);
-        // pitchedPosition[0] += 100000;
-        // pitchedPosition[1] += 100000;
+        pitchedPosition[0] += target[0];
+        pitchedPosition[1] += target[1];
 
         // Handling rotation
         mat4.fromRotation(matrix, rotation, forward);
