@@ -95,7 +95,7 @@ export class ScrollZoomImpl implements IMapEventImpl {
 
         const deltaZoom = Math.log10(Math.abs(deltaY));
         let nextZoom = this.map.zoom + factor * deltaZoom;
-        nextZoom = Math.min(Math.max(1, nextZoom), 25);
+        nextZoom = Math.min(Math.max(0, nextZoom), 25);
 
         console.log(nextZoom);
 

@@ -19,7 +19,7 @@ export class GLContext {
     }
 
     clear() {
-        this.gl.clearColor(0, 1, 1, 1);
+        this.gl.clearColor(0, 0, 0, 1);
         this.gl.clearDepth(1);
         this.gl.enable(this.gl.DEPTH_TEST);
         this.gl.depthFunc(this.gl.LEQUAL);
