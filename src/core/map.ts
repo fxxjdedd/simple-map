@@ -38,13 +38,7 @@ export class SimpleMap {
     private runningRenderLoopID: number = 0;
 
     constructor(container: string, init?: Partial<SimpleMapInit>) {
-        const {
-            center = [0, 0],
-            zoom = 1,
-            pitch = 0,
-            rotation = 0,
-            viewSize = [800, 600],
-        } = init || {};
+        const { center = [0, 0], zoom = 1, pitch = 0, rotation = 0, viewSize } = init || {};
         this.projection = EPSGUtilSet["EPSG:3857"].projection;
 
         this.center = center;
@@ -53,16 +47,16 @@ export class SimpleMap {
         this.pitch = pitch;
         this.rotation = rotation;
 
+        this.context = new GLContext(container);
+
         this.camera = new PerspectiveCamera({
-            viewSize,
+            viewSize: viewSize || this.context.viewport.slice(2),
             zoom,
             pitch,
             rotation,
             target: this.centerCoord,
             projection: this.projection,
         });
-
-        this.context = new GLContext(container);
 
         this.events = new MapEvents(this, DefaultEventImplSet);
         this.events.bindAll();

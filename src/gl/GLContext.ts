@@ -4,6 +4,10 @@ export class GLContext {
     container: HTMLElement;
     gl: WebGLRenderingContext;
 
+    get viewport() {
+        return this.gl.getParameter(this.gl.VIEWPORT);
+    }
+
     constructor(container: string) {
         this.container = document.getElementById(container)!;
         const canvas = document.createElement("canvas");
