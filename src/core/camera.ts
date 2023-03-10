@@ -1,19 +1,20 @@
 import { mat2, mat4, quat, vec2, vec3, vec4 } from "gl-matrix";
+import { EPSILON, EPSILON_RADIAN } from "../projection/Constants";
 import { Projection } from "../projection/Projection";
 import { Vector3 } from "../util/matrix";
 
 export interface PerspectiveCameraTransform {
     position: vec3;
-    direction: vec3;
+    forward: vec3; // negative direction
     up: vec3;
     right: vec3;
 }
 
 export interface PerspectiveCameraInit {
     viewSize: vec2;
-    target: vec2; // coord
-    pitch: number; // direction
-    rotation: number; // up
+    target: vec2;
+    pitch: number;
+    rotation: number;
     zoom: number;
     projection: Projection;
 }
@@ -59,17 +60,18 @@ export class PerspectiveCamera {
         let pitchedPosition = vec3.scale(vec3.create(), forward, this.cameraAltitude);
         pitchedPosition[0] += target[0];
         pitchedPosition[1] += target[1];
+        console.log(
+            "🚀 ~ file: Camera.ts:61 ~ PerspectiveCamera ~ updateTransform ~ pitchedPosition:",
+            pitchedPosition
+        );
 
         // Handling rotation
         mat4.fromRotation(matrix, rotation, forward);
         vec3.transformMat4(up, up, matrix);
         vec3.transformMat4(right, right, matrix);
 
-        // The opposite of forward is direction
-        const direction = vec3.scale(vec3.create(), forward, -1);
-
         this.transform = {
-            direction,
+            forward,
             up,
             right,
             position: pitchedPosition,
@@ -98,7 +100,7 @@ export class PerspectiveCamera {
     }
 
     getVPMatrix() {
-        const { position: P, direction: D, up: U, right: R } = this.transform;
+        const { position: P, forward: F, up: U, right: R } = this.transform;
         // prettier-ignore
         let translateMatrix = mat4.fromValues(
             1, 0, 0, -P[0],
@@ -113,12 +115,13 @@ export class PerspectiveCamera {
         let rotateMatrix = mat4.fromValues(
             R[0], R[1], R[2], 0,
             U[0], U[1], U[2], 0,
-            D[0], D[1], D[2], 0, 
+            F[0], F[1], F[2], 0, // This must be forward, not direction (negative forward)
             0,    0,    0,    1
         );
         rotateMatrix = mat4.transpose(rotateMatrix, rotateMatrix);
 
-        const viewMatrix = mat4.multiply(mat4.create(), translateMatrix, rotateMatrix);
+        // First move, then rotate.
+        const viewMatrix = mat4.multiply(mat4.create(), rotateMatrix, translateMatrix);
 
         let { near, far, nearPlaneWidth, nearPlaneHeight } = this;
 
@@ -134,6 +137,7 @@ export class PerspectiveCamera {
             0,   0,   -1,  0,
         );
         projMatrix = mat4.transpose(projMatrix, projMatrix);
+
         return mat4.mul(mat4.create(), projMatrix, viewMatrix);
     }
 
@@ -185,7 +189,9 @@ export class PerspectiveCamera {
         const frustumPlanes = frustumPlaneNormals.map((normal, index) => {
             // plane: Ax + By + Cz + D = 0;
             // prettier-ignore
-            const A = normal[0], B = normal[1], C = normal[2];
+            const A = normal[0];
+            const B = normal[1];
+            const C = normal[2];
             const pointOnPlane = frustumPlaneTriangles[index][0];
             const D = -vec3.dot(normal, pointOnPlane);
             return vec4.fromValues(A, B, C, D);
@@ -240,10 +246,23 @@ export class PerspectiveCamera {
             );
             mat2.transpose(M, M);
 
-            // two parallel lines
-            if (mat2.determinant(M) == 0) {
+            const absDeterminant = Math.abs(mat2.determinant(M));
+
+            if (absDeterminant === 0 || absDeterminant < EPSILON) {
                 continue;
+            } else if (absDeterminant >= EPSILON && absDeterminant < 0.1) {
+                const v1 = vec2.fromValues(line[0], line[1]);
+                const v2 = vec2.fromValues(intersectLine[0], intersectLine[1]);
+                // v1 · v2 = ||v1|| ||v2|| cos(θ)
+                // cos(θ) = (v1 · v2) / (||v1|| ||v2||)
+                let cosTheta = vec2.dot(v1, v2) / (vec2.len(v1) * vec2.len(v2));
+                cosTheta = Math.max(Math.min(cosTheta, 1), -1);
+                const rad = Math.acos(cosTheta);
+                if (Math.PI - rad < EPSILON_RADIAN) {
+                    continue;
+                }
             }
+
             mat2.invert(M, M);
 
             const D = vec2.fromValues(line[2], intersectLine[2]);

@@ -29,10 +29,16 @@ export class MapEvents {
     }
 }
 
-export class MouseMoveImpl implements IMapEventImpl {
+enum ButtonNum {
+    left,
+    mid,
+    right,
+}
+
+export class MapInteractionImpl implements IMapEventImpl {
     map!: SimpleMap;
 
-    moving: boolean = false;
+    button!: ButtonNum;
 
     constructor() {
         this.onMouseDown = this.onMouseDown.bind(this);
@@ -42,23 +48,26 @@ export class MouseMoveImpl implements IMapEventImpl {
 
     bind(): void {
         this.map.context.container.addEventListener("mousedown", this.onMouseDown);
+        this.map.context.container.addEventListener("contextmenu", this.onRightClick);
     }
     unbind(): void {
         this.map.context.container.removeEventListener("mousedown", this.onMouseDown);
         this.map.context.container.removeEventListener("mousemove", this.onMouseMove);
         this.map.context.container.removeEventListener("mouseup", this.onMouseUp);
+        this.map.context.container.removeEventListener("contextmenu", this.onRightClick);
     }
 
-    onMouseDown() {
-        this.moving = true;
+    onMouseDown(e: MouseEvent) {
+        e.preventDefault();
+        this.button = e.button;
         this.map.context.container.addEventListener("mousemove", this.onMouseMove);
         this.map.context.container.addEventListener("mouseup", this.onMouseUp);
     }
 
     onMouseMove(e: MouseEvent) {
-        if (this.moving) {
-            // unnessary check ...
-            const { movementX, movementY } = e; // y is negative when move up, x is positive when move right
+        const { movementX, movementY } = e; // y is negative when move up, x is positive when move right
+
+        if (this.button == ButtonNum.left) {
             const resolution = this.map.getResolution();
             const deltaX = -movementX * resolution;
             const deltaY = movementY * resolution;
@@ -68,11 +77,20 @@ export class MouseMoveImpl implements IMapEventImpl {
             nextCenterCoord[1] += deltaY;
 
             this.map.setCenterCoord(nextCenterCoord);
+        } else if (this.button == ButtonNum.right) {
+            console.log(movementX, movementY);
+            const deltaRotation = (movementX * Math.PI) / 180;
+            const deltaPitch = movementX;
+            this.map.setRotation(this.map.rotation - deltaRotation);
         }
     }
 
     onMouseUp() {
         this.map.context.container.removeEventListener("mousemove", this.onMouseMove);
+    }
+
+    onRightClick(e: MouseEvent) {
+        e.preventDefault(); // disable context menu
     }
 }
 
@@ -98,9 +116,12 @@ export class ScrollZoomImpl implements IMapEventImpl {
         nextZoom = Math.min(Math.max(0, nextZoom), 25);
 
         console.log(nextZoom);
-
+        // TODO: zoom at mouse point
         this.map.setZoom(nextZoom);
     }
 }
 
-export const DefaultEventImplSet: MapEventImplSet = [new ScrollZoomImpl(), new MouseMoveImpl()];
+export const DefaultEventImplSet: MapEventImplSet = [
+    new ScrollZoomImpl(),
+    new MapInteractionImpl(),
+];
