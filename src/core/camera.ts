@@ -1,5 +1,5 @@
 import { mat2, mat4, quat, vec2, vec3, vec4 } from "gl-matrix";
-import { EPSILON, EPSILON_RADIAN } from "../projection/Constants";
+import { DegreeToRadian, EPSILON, EPSILON_RADIAN } from "../projection/Constants";
 import { Projection } from "../projection/Projection";
 import { Vector3 } from "../util/matrix";
 
@@ -28,7 +28,7 @@ export class PerspectiveCamera {
 
     zoom: number;
     cameraAltitude: number = 0;
-    fov: number = (60 * Math.PI) / 180;
+    fov: number = 60 * DegreeToRadian;
 
     transform: PerspectiveCameraTransform;
 
@@ -46,6 +46,9 @@ export class PerspectiveCamera {
     }
 
     updateTransform(target: vec2, rotation: number, pitch: number): PerspectiveCameraTransform {
+        const rotationRad = rotation * DegreeToRadian;
+        const pitchRad = pitch * DegreeToRadian;
+
         const up = vec3.clone(Vector3.up);
         const right = vec3.clone(Vector3.right);
         const forward = vec3.clone(Vector3.forward);
@@ -53,7 +56,7 @@ export class PerspectiveCamera {
         const matrix = mat4.create();
 
         // Handling pitch
-        mat4.fromRotation(matrix, pitch, Vector3.right);
+        mat4.fromRotation(matrix, pitchRad, Vector3.right);
         vec3.transformMat4(forward, forward, matrix);
         vec3.transformMat4(up, up, matrix);
 
@@ -62,7 +65,7 @@ export class PerspectiveCamera {
         pitchedPosition[1] += target[1];
 
         // Handling rotation
-        mat4.fromRotation(matrix, rotation, forward);
+        mat4.fromRotation(matrix, rotationRad, forward);
         vec3.transformMat4(up, up, matrix);
         vec3.transformMat4(right, right, matrix);
 

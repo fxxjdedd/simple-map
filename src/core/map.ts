@@ -6,6 +6,7 @@ import { GLContext } from "../gl/GLContext";
 import { Projection } from "../projection/Projection";
 import { EPSGUtilSet } from "../util/tile";
 import { DefaultEventImplSet, MapEvents } from "./events";
+import { DegreeToRadian } from "../projection/Constants";
 
 export interface FrameState {
     camera: PerspectiveCamera;
@@ -51,9 +52,9 @@ export class SimpleMap {
 
         this.camera = new PerspectiveCamera({
             viewSize: viewSize || this.context.viewport.slice(2),
-            zoom,
-            pitch,
-            rotation,
+            zoom: this.zoom,
+            pitch: this.pitch,
+            rotation: this.rotation,
             target: this.centerCoord,
             projection: this.projection,
         });

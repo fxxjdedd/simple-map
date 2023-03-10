@@ -1,4 +1,5 @@
 import { mat2, vec2 } from "gl-matrix";
+import { DegreeToRadian } from "../projection/Constants";
 import { SimpleMap } from "./map";
 
 export interface IMapEventImpl {
@@ -84,9 +85,11 @@ export class MapInteractionImpl implements IMapEventImpl {
             this.map.setCenterCoord(nextCenterCoord);
         } else if (this.button == ButtonNum.right) {
             console.log(movementX, movementY);
-            const deltaRotation = (movementX * Math.PI) / 180;
-            const deltaPitch = movementX;
+
+            const deltaRotation = movementX;
+            const deltaPitch = movementY;
             this.map.setRotation(this.map.rotation - deltaRotation);
+            // this.map.setPitch(Math.max(Math.min(this.map.pitch + deltaPitch, 80), 0));
         }
     }
 
