@@ -60,10 +60,6 @@ export class PerspectiveCamera {
         let pitchedPosition = vec3.scale(vec3.create(), forward, this.cameraAltitude);
         pitchedPosition[0] += target[0];
         pitchedPosition[1] += target[1];
-        console.log(
-            "🚀 ~ file: Camera.ts:61 ~ PerspectiveCamera ~ updateTransform ~ pitchedPosition:",
-            pitchedPosition
-        );
 
         // Handling rotation
         mat4.fromRotation(matrix, rotation, forward);

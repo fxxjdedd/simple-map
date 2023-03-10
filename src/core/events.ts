@@ -1,4 +1,4 @@
-import { vec2 } from "gl-matrix";
+import { mat2, vec2 } from "gl-matrix";
 import { SimpleMap } from "./map";
 
 export interface IMapEventImpl {
@@ -69,12 +69,17 @@ export class MapInteractionImpl implements IMapEventImpl {
 
         if (this.button == ButtonNum.left) {
             const resolution = this.map.getResolution();
+            const nextCenterCoord = vec2.clone(this.map.centerCoord);
+
             const deltaX = -movementX * resolution;
             const deltaY = movementY * resolution;
 
-            const nextCenterCoord = vec2.clone(this.map.centerCoord);
-            nextCenterCoord[0] += deltaX;
-            nextCenterCoord[1] += deltaY;
+            let vDelta = vec2.fromValues(deltaX, deltaY);
+            // Because the view matrix first applies translation and then rotation, we need to remove the influence of rotation on translation when we perform a translation.
+            vDelta = vec2.rotate(vDelta, vDelta, vec2.fromValues(0, 0), this.map.rotation);
+
+            nextCenterCoord[0] += vDelta[0];
+            nextCenterCoord[1] += vDelta[1];
 
             this.map.setCenterCoord(nextCenterCoord);
         } else if (this.button == ButtonNum.right) {
