@@ -1,7 +1,7 @@
 import { mat2, mat4, quat, vec2, vec3, vec4 } from "gl-matrix";
 import { DegreeToRadian, EPSILON, EPSILON_RADIAN } from "../projection/Constants";
 import { Projection } from "../projection/Projection";
-import { intersectPoint } from "../util/math";
+import { twoLineIntersectPoint } from "../util/math";
 import { Vector3 } from "../util/matrix";
 
 export interface PerspectiveCameraTransform {
@@ -198,6 +198,7 @@ export class PerspectiveCamera {
             return vec4.fromValues(A, B, C, D);
         });
 
+        // intersects with z = 0
         const frustumIntersectLines = frustumPlanes.map(plane => {
             const [A, B, C, D] = plane;
             // map plane's z is 0, so C is discarded
@@ -205,7 +206,10 @@ export class PerspectiveCamera {
             return vec3.fromValues(A, B, D);
         });
 
-        const intersectPoints = this.getFrustumPlaneIntersectPoints(frustumIntersectLines);
+        const intersectPoints = this.getFrustumPlaneIntersectPoints(
+            frustumWorldPositions,
+            frustumIntersectLines
+        );
 
         // prettier-ignore
         let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
@@ -220,25 +224,49 @@ export class PerspectiveCamera {
         const minLnglat = this.projection.unproject(vec2.fromValues(minX, minY));
         const maxLnglat = this.projection.unproject(vec2.fromValues(maxX, maxY));
 
+        // TODO: support skyHeight and fog, to reduce tile nums when pitch at hight value
+
         return vec4.fromValues(minLnglat[0], minLnglat[1], maxLnglat[0], maxLnglat[1]);
     }
 
-    private getFrustumPlaneIntersectPoints(lines: vec3[]) {
+    private getFrustumPlaneIntersectPoints(frustumVerties: vec3[], lines: vec3[]) {
+        const [nearLB, nearRB, nearRT, nearLT, farLB, farRB, farRT, farLT] = frustumVerties;
         const [left, right, top, bottom, near, far] = lines;
 
-        const nearD = Math.abs(near[2]);
-        const farD = Math.abs(far[2]);
-        const topD = Math.abs(top[2]);
-        const bottomD = Math.abs(bottom[2]);
+        let toIntersectLines: vec3[];
 
-        const nearBoundaryLine = nearD > bottomD ? bottom : near;
-        const farBoundaryLine = farD > topD ? top : far;
+        if (farLB[2] >= 0 && farRB[2] >= 0 && farRT[2] >= 0 && farLT[2] >= 0) {
+            toIntersectLines = [];
+        } else if (farLB[2] < 0 && farRB[2] < 0 && farRT[2] < 0 && farLT[2] < 0) {
+            toIntersectLines = [left, top, right, bottom];
+        } else if (farLT[2] > 0 && farRT[2] > 0) {
+            // top plane above 0, discard
+            toIntersectLines = [left, far, right, bottom];
+        } else if (farRT[2] > 0 && farRB[2] > 0) {
+            // right plane above 0, discard
+            toIntersectLines = [bottom, far, top, left];
+        } else if (farRB[2] > 0 && farLB[2] > 0) {
+            // bottom plane above 0, discatd
+            toIntersectLines = [right, far, left, top];
+        } else if (farLB[2] > 0 && farLT[2] > 0) {
+            // left plane above 0, discard
+            toIntersectLines = [bottom, far, top, right];
+        } else {
+            // only one vertex above 0, no discard
+            toIntersectLines = [left, far, top, right, bottom];
+        }
 
-        const leftNearPnt = intersectPoint(left, nearBoundaryLine);
-        const rightNearPnt = intersectPoint(right, nearBoundaryLine);
-        const leftFarPnt = intersectPoint(left, farBoundaryLine);
-        const rightFarPnt = intersectPoint(right, farBoundaryLine);
+        const intersectPoints = [];
+        for (let i = 0; i < toIntersectLines.length; i++) {
+            const pnt = twoLineIntersectPoint(
+                toIntersectLines[i],
+                toIntersectLines[(i + 1) % toIntersectLines.length]
+            );
+            if (pnt) {
+                intersectPoints.push(pnt);
+            }
+        }
 
-        return [leftNearPnt!, rightNearPnt!, leftFarPnt!, rightFarPnt!];
+        return intersectPoints;
     }
 }

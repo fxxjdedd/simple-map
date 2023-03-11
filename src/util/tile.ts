@@ -49,6 +49,7 @@ function getBoundsTileNums(bounds: vec4, zoom: number): TileNum[] {
             });
         }
     }
+
     return tileNums;
 }
 
