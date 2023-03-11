@@ -94,7 +94,7 @@ export class MapInteractionImpl implements IMapEventImpl {
             const deltaRotation = movementX;
             const deltaPitch = movementY;
             this.map.setRotation(this.map.rotation - deltaRotation);
-            // this.map.setPitch(Math.max(Math.min(this.map.pitch + deltaPitch, 80), 0));
+            this.map.setPitch(Math.max(Math.min(this.map.pitch - deltaPitch, 80), 0));
         }
     }
 
