@@ -1,6 +1,7 @@
 import { mat2, mat4, quat, vec2, vec3, vec4 } from "gl-matrix";
 import { DegreeToRadian, EPSILON, EPSILON_RADIAN } from "../projection/Constants";
 import { Projection } from "../projection/Projection";
+import { intersectPoint } from "../util/math";
 import { Vector3 } from "../util/matrix";
 
 export interface PerspectiveCameraTransform {
@@ -141,7 +142,7 @@ export class PerspectiveCamera {
     }
 
     getBounds() {
-        // ndc positions (right-handed)
+        // ndc positions (right-handed), the order is: near-lb, near-rb, near-rt, near-lt, far follows the same order.
         const frustumNDCPositions = [
             // near
             vec4.fromValues(1, -1, -1, 1),
@@ -170,6 +171,7 @@ export class PerspectiveCamera {
             [frustumWorldPositions[1], frustumWorldPositions[2], frustumWorldPositions[6]], // right
             [frustumWorldPositions[2], frustumWorldPositions[3], frustumWorldPositions[7]], // top
             [frustumWorldPositions[4], frustumWorldPositions[0], frustumWorldPositions[1]], // bottom
+            [frustumWorldPositions[2], frustumWorldPositions[1], frustumWorldPositions[0]], // near
             [frustumWorldPositions[7], frustumWorldPositions[4], frustumWorldPositions[5]], // far
         ];
 
@@ -203,20 +205,16 @@ export class PerspectiveCamera {
             return vec3.fromValues(A, B, D);
         });
 
-        const intersectPoints = frustumIntersectLines.map(line => {
-            return this.intersectPoints(line, frustumIntersectLines);
-        });
+        const intersectPoints = this.getFrustumPlaneIntersectPoints(frustumIntersectLines);
 
         // prettier-ignore
         let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
 
-        for (const points of intersectPoints) {
-            for (const point of points) {
-                minX = Math.min(minX, point[0]);
-                minY = Math.min(minY, point[1]);
-                maxX = Math.max(maxX, point[0]);
-                maxY = Math.max(maxY, point[1]);
-            }
+        for (const point of intersectPoints) {
+            minX = Math.min(minX, point[0]);
+            minY = Math.min(minY, point[1]);
+            maxX = Math.max(maxX, point[0]);
+            maxY = Math.max(maxY, point[1]);
         }
 
         const minLnglat = this.projection.unproject(vec2.fromValues(minX, minY));
@@ -225,51 +223,22 @@ export class PerspectiveCamera {
         return vec4.fromValues(minLnglat[0], minLnglat[1], maxLnglat[0], maxLnglat[1]);
     }
 
-    private intersectPoints(line: vec3, intersectLines: vec3[]) {
-        const points: vec2[] = [];
+    private getFrustumPlaneIntersectPoints(lines: vec3[]) {
+        const [left, right, top, bottom, near, far] = lines;
 
-        for (const intersectLine of intersectLines) {
-            // same line
-            if (vec3.equals(line, intersectLine)) {
-                continue;
-            }
+        const nearD = Math.abs(near[2]);
+        const farD = Math.abs(far[2]);
+        const topD = Math.abs(top[2]);
+        const bottomD = Math.abs(bottom[2]);
 
-            // Ax + By + D = 0;
-            // M·(x,y) = -D
-            // (x,y) = invM·-D
+        const nearBoundaryLine = nearD > bottomD ? bottom : near;
+        const farBoundaryLine = farD > topD ? top : far;
 
-            // prettier-ignore
-            const M = mat2.fromValues(
-                line[0], line[1],
-                intersectLine[0], intersectLine[1]
-            );
-            mat2.transpose(M, M);
+        const leftNearPnt = intersectPoint(left, nearBoundaryLine);
+        const rightNearPnt = intersectPoint(right, nearBoundaryLine);
+        const leftFarPnt = intersectPoint(left, farBoundaryLine);
+        const rightFarPnt = intersectPoint(right, farBoundaryLine);
 
-            const absDeterminant = Math.abs(mat2.determinant(M));
-
-            if (absDeterminant === 0 || absDeterminant < EPSILON) {
-                continue;
-            } else if (absDeterminant >= EPSILON && absDeterminant < 0.1) {
-                const v1 = vec2.fromValues(line[0], line[1]);
-                const v2 = vec2.fromValues(intersectLine[0], intersectLine[1]);
-                // v1 · v2 = ||v1|| ||v2|| cos(θ)
-                // cos(θ) = (v1 · v2) / (||v1|| ||v2||)
-                let cosTheta = vec2.dot(v1, v2) / (vec2.len(v1) * vec2.len(v2));
-                cosTheta = Math.max(Math.min(cosTheta, 1), -1);
-                const rad = Math.acos(cosTheta);
-                if (Math.PI - rad < EPSILON_RADIAN) {
-                    continue;
-                }
-            }
-
-            mat2.invert(M, M);
-
-            const D = vec2.fromValues(line[2], intersectLine[2]);
-            vec2.scale(D, D, -1);
-
-            const xy = vec2.transformMat2(vec2.create(), D, M);
-            points.push(xy);
-        }
-        return points;
+        return [leftNearPnt!, rightNearPnt!, leftFarPnt!, rightFarPnt!];
     }
 }
