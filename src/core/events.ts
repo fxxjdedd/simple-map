@@ -77,7 +77,12 @@ export class MapInteractionImpl implements IMapEventImpl {
 
             let vDelta = vec2.fromValues(deltaX, deltaY);
             // Because the view matrix first applies translation and then rotation, we need to remove the influence of rotation on translation when we perform a translation.
-            vDelta = vec2.rotate(vDelta, vDelta, vec2.fromValues(0, 0), this.map.rotation);
+            vDelta = vec2.rotate(
+                vDelta,
+                vDelta,
+                vec2.fromValues(0, 0),
+                this.map.rotation * DegreeToRadian
+            );
 
             nextCenterCoord[0] += vDelta[0];
             nextCenterCoord[1] += vDelta[1];
