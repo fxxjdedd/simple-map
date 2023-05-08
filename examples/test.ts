@@ -9,7 +9,7 @@ const map = new SimpleMap("app", {
     pitch: 0,
 });
 const layer = new EPSG3857RasterTileLayer({
-    url: "https://api.mapbox.com/v4/mapbox.satellite/[z]/[x]/[y]@2x.webp?sku=101ozOUpQXOjo&access_token=pk.eyJ1IjoibWFwYm94IiwiYSI6ImNpejY4NXFhYTA2bTMyeW44ZG0ybXBkMHkifQ.gUGbDOPUN1v1fTs5SeOR4A",
+    url: "https://api.mapbox.com/v4/mapbox.satellite/[z]/[x]/[y]@2x.webp?access_token=pk.eyJ1IjoiZnh4amRlZGQiLCJhIjoiY2xoYnRqbG9nMHV1aTNrbnM5amM3am9oaSJ9.ELBvnIe_l-31f-1jaZqkGg",
     cacheSize: 500,
     zIndex: 1,
     zooms: [2, 22],
